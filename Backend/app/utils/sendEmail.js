@@ -12,6 +12,9 @@ const sendEmail = async(option) => {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+   
+    connectionTimeout: 15000, 
+    greetingTimeout: 15000,
   });
 
   // mail options receiver
