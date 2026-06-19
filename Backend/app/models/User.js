@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
    },
    email : {
     type: String,
-    required:true
+    required:true,
+    unique:true
    },
    password : {
     type: String,
@@ -19,6 +20,16 @@ const userSchema = new mongoose.Schema({
     enum :["user","admin"],
     default:"user"
    },
+   isVerified: {
+    type: Boolean,
+    default: false
+   },
+   verificationToken: {
+    type: String
+   },
+   verificationTokenExpires: {
+    type: Date
+   }
 })
 
 
