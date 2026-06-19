@@ -4,20 +4,16 @@ const sendEmail = async (option) => {
   // Transporter Config - Environment Variables ke sath pure standard approach
   const Transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    port: 587,              // 🟩 Port 587 (STARTTLS) Render ke firewall blockages ko bypass karega
+    secure: false,          // 🟩 Port 587 ke liye hamesha false hota hai
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: process.env.EMAIL_USER, // Render Dashboard se automatic read hoga
+      pass: process.env.EMAIL_PASS, // Render Dashboard se automatic read hoga
     },
-    // 🔥 Render par IPv6 unreachable error ko crash hone se rokne ke liye custom connection config:
+    // Render par response lag ya timeout se bachne ke liye standard settings:
     connectionTimeout: 15000,
     greetingTimeout: 15000,
     socketTimeout: 15000,
-    tls: {
-      // Yeh line Nodemailer ko IPv6 bypass karne aur strict IPv4 connectivity establish karne me help karegi
-      rejectUnauthorized: false
-    }
   });
 
   // mail options receiver
@@ -28,6 +24,7 @@ const sendEmail = async (option) => {
     html: option.html,
   };
 
+  // Mail sending command
   await Transporter.sendMail(Mailoptions);
 };
 
