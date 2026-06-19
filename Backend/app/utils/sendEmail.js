@@ -1,19 +1,23 @@
 const nodemailer = require("nodemailer");
 
 const sendEmail = async (option) => {
-  // Transporter Config - Environment Variables ke sath pure standard approach
+  // Transporter Config - Environment Variables ke sath strict IPv4 connectivity
   const Transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,              // 🟩 Port 587 (STARTTLS) Render ke firewall blockages ko bypass karega
-    secure: false,          // 🟩 Port 587 ke liye hamesha false hota hai
+    // 🔥 Host mein direct Gmail ka official IPv4 IP address daal diya taaki IPv6 block bypass ho sake
+    host: "74.125.130.108", 
+    port: 465,              // Secure SSL Port
+    secure: true,           // SSL active rahega
     auth: {
-      user: process.env.EMAIL_USER, // Render Dashboard se automatic read hoga
-      pass: process.env.EMAIL_PASS, // Render Dashboard se automatic read hoga
+      user: process.env.EMAIL_USER, // Render Dashboard variable
+      pass: process.env.EMAIL_PASS, // Render Dashboard variable
     },
-    // Render par response lag ya timeout se bachne ke liye standard settings:
     connectionTimeout: 15000,
     greetingTimeout: 15000,
     socketTimeout: 15000,
+    tls: {
+      // Kyunki hum IP address use kar rahe hain, isliye SSL domain mismatch warning ko ignore karna hoga
+      rejectUnauthorized: false
+    }
   });
 
   // mail options receiver
@@ -24,7 +28,6 @@ const sendEmail = async (option) => {
     html: option.html,
   };
 
-  // Mail sending command
   await Transporter.sendMail(Mailoptions);
 };
 
