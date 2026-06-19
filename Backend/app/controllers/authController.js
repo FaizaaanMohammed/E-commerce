@@ -10,7 +10,7 @@ class UserController {
   // 1. USER REGISTER (With Email Verification Logic)
   async userRegister(req, res) {
     try {
-      const { name, email, password } = req.body;
+      const { name, email, password ,role} = req.body;
 
       // Validation
       if (!name || !email || !password) {
@@ -42,6 +42,7 @@ class UserController {
         name,
         email,
         password: hashedPassword,
+        role:role,
         virtualBalance: 1000,
         isVerified: false, 
         verificationToken: verificationToken,

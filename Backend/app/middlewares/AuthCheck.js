@@ -3,9 +3,9 @@ const httpStausCode = require("../utils/httpsStatusCode");
 
 
 
-const adminAuthCheck = (req,res,next)=>{
+const AuthCheck = (req,res,next)=>{
   
-    const token = req?.body?.token || req?.query?.token || req?.headers?.['x-access-token'] || req?.headers?.['authorization']
+    let token = req?.body?.token || req?.query?.token || req?.headers?.['x-access-token'] || req?.headers?.['authorization']
 
     if(!token){
         return res.status(httpStausCode.BAD_REQUEST).json({
@@ -33,4 +33,4 @@ const adminAuthCheck = (req,res,next)=>{
 
 }
 
-module.exports = adminAuthCheck
+module.exports = AuthCheck
