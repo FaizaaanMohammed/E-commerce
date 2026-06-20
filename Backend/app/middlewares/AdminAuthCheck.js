@@ -4,7 +4,7 @@ const AdminAuthcheck = (req, res, next) => {
 
   
   try {
-    console.log("Current user role from token:", req?.admin?.role)
+    
     if (req?.admin && req?.admin?.role === "admin") {
       return next();
     }
