@@ -1,4 +1,6 @@
 /Backend/node_modules/
 /frontend/node_modules/
+/admin-panel/node_modules/
 /Backend/.env
 /frontend/.env.local
+/admin-panel/env
