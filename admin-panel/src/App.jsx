@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ThemeProvider, createTheme, CssBaseline, Box, Typography } from '@mui/material';
-import DashboardLayout from './layouts/DashboardLayout';
+import DashboardLayout from './layouts/DashBoardLayout';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Product';
 import Orders from './pages/Order';
