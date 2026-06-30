@@ -19,10 +19,12 @@ const app = express();
 // List of allowed URLs
 const allowedOrigins = [
   "https://e-commerce-lemon-nine-65.vercel.app", 
-  "https://e-commerce-djzo.vercel.app/",    
+  "https://e-commerce-djzo.vercel.app",    
   "http://localhost:5173",                       
   "http://localhost:3000"                       
 ];
+
+
 
 app.use(cors({
   origin: function (origin, callback) {
