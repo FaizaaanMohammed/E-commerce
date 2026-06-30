@@ -1,18 +1,36 @@
-import React, { useState, useMemo } from 'react';
-import { ThemeProvider, createTheme, CssBaseline, Typography, Box } from '@mui/material';
-import DashboardLayout from './layouts/DashBoardLayout';
+import React, { useState, useMemo, useEffect } from 'react';
+import { ThemeProvider, createTheme, CssBaseline, Box, Typography } from '@mui/material';
+import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Product';
 import Orders from './pages/Order';
 import Reviews from './pages/Review';
 import User from './pages/User';
 import WalletSettings from './pages/WalletSetting';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 export default function App() {
   const [activePage, setActivePage] = useState('dashboard');
-  const [mode, setMode] = useState('dark'); // Default dynamic dark mode
+  const [mode, setMode] = useState('dark'); 
+  const [isAuthenticated, setIsAuthenticated] = useState(false); 
+  const [authView, setAuthView] = useState('login'); 
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Custom Light & Dark Style Palette Config
+  // 📡 AUTOMATIC TOKEN DETECTOR ON LOAD
+  useEffect(() => {
+    const checkToken = () => {
+      const token = localStorage.getItem('token'); 
+      if (token) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+      setCheckingAuth(false);
+    };
+    checkToken();
+  }, []);
+
   const theme = useMemo(() => createTheme({
     palette: {
       mode,
@@ -35,29 +53,43 @@ export default function App() {
 
   const renderPage = () => {
     switch (activePage) {
-      case 'dashboard':
-        return <Dashboard mode={mode} />;
-      case 'products':
-        return <Products mode={mode} />;
-      case 'orders':
-        return <Orders mode={mode} />;
-      case 'reviews':
-        return <Reviews mode={mode} />;
-      case 'users':
-        return <User mode={mode} />;
-      case 'wallet_settings':
-        return <WalletSettings mode={mode} />;
-      default:
-        return <Dashboard mode={mode} />;
+      case 'dashboard': return <Dashboard mode={mode} />;
+      case 'products': return <Products mode={mode} />;
+      case 'orders': return <Orders mode={mode} />;
+      case 'reviews': return <Reviews mode={mode} />;
+      case 'users': return <User mode={mode} />;
+      case 'wallet_settings': return <WalletSettings mode={mode} />;
+      default: return <Dashboard mode={mode} />;
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: mode === 'dark' ? '#040711' : '#f8fafc' }}>
+          <Typography sx={{ fontFamily: '"Space Grotesk"', color: '#06b6d4', fontWeight: 700, letterSpacing: '1px' }}>
+            SCANNING SECURITY TOKENS...
+          </Typography>
+        </Box>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <DashboardLayout activePage={activePage} setActivePage={setActivePage} mode={mode} toggleTheme={toggleTheme}>
-        {renderPage()}
-      </DashboardLayout>
+      {!isAuthenticated ? (
+        authView === 'login' ? (
+          <Login mode={mode} setAuth={setIsAuthenticated} setAuthView={setAuthView} />
+        ) : (
+          <Register mode={mode} setAuthView={setAuthView} />
+        )
+      ) : (
+        <DashboardLayout activePage={activePage} setActivePage={setActivePage} mode={mode} toggleTheme={toggleTheme}>
+          {renderPage()}
+        </DashboardLayout>
+      )}
     </ThemeProvider>
   );
 }
