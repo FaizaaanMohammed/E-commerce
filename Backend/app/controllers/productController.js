@@ -1,18 +1,44 @@
 const Product = require("../models/Product");
-const httpStausCode = require("../utils/httpsStatusCode");
+const httpStatusCode = require("../utils/httpsStatusCode"); // 1. Spelling standard rakh di hai
+const cloudinary = require("cloudinary").v2; 
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 class ProductController {
+  
+  // ==================== CREATE PRODUCT ====================
   async createProduct(req, res) {
     try {
+      let requestData = req.body;
+
+      if (typeof req.body.data === 'string') {
+          requestData = JSON.parse(req.body.data);
+      }
+
       const {
         title,
         description,
         price,
         category,
         stock,
-        images,
         coinRewardEligible,
-      } = req?.body;
+      } = requestData;
+
+      let imageUrls = [];
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: "product_images",
+          });
+          imageUrls.push(result.secure_url);
+        }
+      } else if (requestData.images && Array.isArray(requestData.images)) {
+        imageUrls = requestData.images;
+      }
 
       const newProduct = await Product.create({
         title,
@@ -20,109 +46,120 @@ class ProductController {
         price,
         category,
         stock,
-        images,
+        images: imageUrls,
         coinRewardEligible,
       });
 
-     return res.status(httpStausCode.CREATED).json({
-        sucess:true,
-        message:"Product has been created",
-        total : newProduct.length,
-        data:newProduct
-     })
-
-
+      return res.status(httpStatusCode.CREATED).json({
+        success: true,
+        message: "Product has been created",
+        data: newProduct,
+      });
 
     } catch (err) {
-      return res.status(httpStausCode.BAD_REQUEST).json({
-        sucess: false,
-        message: `${err?.message}`,
+      console.error(err);
+      return res.status(httpStatusCode.BAD_REQUEST).json({
+        success: false,
+        message: err.message,
       });
     }
   }
 
-  // get all product
-
-  async getProduct (req,res){
-   try{
-     const products = await Product.find();
-     return res.status(httpStausCode.OK).json({
-        success:true,
-        message:"All Product Get Succesfully",
-        length:products.length,
-        data:products
-     })
-   }
-   catch(err){
-       return res?.status(httpStausCode.BAD_REQUEST).json({
-         success:false,
-         message:`${err?.message}`
-       })
-   }
+  // ==================== GET ALL PRODUCTS ====================
+  async getProduct(req, res) {
+     try {
+       const products = await Product.find();
+       return res.status(httpStatusCode.OK).json({
+          success: true,
+          message: "All Products Fetched Successfully",
+          length: products.length,
+          data: products
+       });
+     } catch (err) {
+         return res.status(httpStatusCode.BAD_REQUEST).json({
+           success: false,
+           message: err.message
+         });
+     }
   }
 
-  // edit product
-  
-  async updateProduct (req,res){
-     try{
-       const {id} = req?.params;
-        
-       const updateProduct  = await Product.findByIdAndUpdate(id,req.body,{
-         new:true,
-         runValidators:true
-       })
+  // ==================== EDIT/UPDATE PRODUCT ====================
+  async updateProduct(req, res) {
+     try {
+       const { id } = req.params;
+       let requestData = req.body;
 
-       if(!updateProduct){
-         return res.status(httpStausCode.NOT_FOUND).json({
-            success:false,
-            message:"Product not found"
-         })
+       if (typeof req.body.data === 'string') {
+          requestData = JSON.parse(req.body.data);
        }
 
-       return res.status(httpStausCode.OK).json({
-        success:true,
-        message:"Product Update successfully",
-        data:updateProduct
-       })
+       // Nayi images handle karne ke liye array
+       let imageUrls = [];
 
-     }
-     catch(err){
-        return res.status(httpStausCode.BAD_REQUEST).json({
-            success:false,
-            message:`${err.message}`
-        })
+       // Agar edit karte waqt nayi files upload ki hain
+       if (req.files && req.files.length > 0) {
+         for (const file of req.files) {
+           const result = await cloudinary.uploader.upload(file.path, {
+             folder: "product_images",
+           });
+           imageUrls.push(result.secure_url);
+         }
+         // req.body mein images array ko nayi urls se replace/add karein
+         requestData.images = imageUrls;
+       }
+
+       const updatedProduct = await Product.findByIdAndUpdate(id, requestData, {
+          new: true,
+          runValidators: true
+       });
+
+       if (!updatedProduct) {
+          return res.status(httpStatusCode.NOT_FOUND).json({
+             success: false,
+             message: "Product not found"
+          });
+       }
+
+       return res.status(httpStatusCode.OK).json({
+          success: true,
+          message: "Product Updated successfully",
+          data: updatedProduct
+       });
+
+     } catch (err) {
+        return res.status(httpStatusCode.BAD_REQUEST).json({
+            success: false,
+            message: err.message
+        });
      }
   }
 
-  // delete product 
-
-  async deleteProduct (req,res){
-    try{
-      const {id} = req?.params;
+  // ==================== DELETE PRODUCT ====================
+  async deleteProduct(req, res) {
+    try {
+      const { id } = req.params;
       
       const productDelete = await Product.findByIdAndDelete(id);
 
-      if(!productDelete){
-        return res.status(httpStausCode.NOT_FOUND).json({
-            success:false,
-            message:"Product Not found"
-        })
+      if (!productDelete) {
+        return res.status(httpStatusCode.NOT_FOUND).json({
+            success: false,
+            message: "Product Not found"
+        });
       }
 
-      return res.status(httpStausCode.OK).json({
-         success:false,
-         message:"Product has been delete"
-      })
+      return res.status(httpStatusCode.OK).json({
+         success: true, // Fixed: Pehle yahan false tha
+         message: "Product has been deleted"
+      });
 
-    }
-    catch(err){
-        return res.status(httpStausCode.NOT_FOUND).json({
-            success:false,
-            message:`${err.message}`
-        })
+    } catch (err) {
+        return res.status(httpStatusCode.BAD_REQUEST).json({
+            success: false,
+            message: err.message
+        });
     }
   }
-
 }
 
 module.exports = new ProductController();
