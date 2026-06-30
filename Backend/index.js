@@ -14,10 +14,6 @@ ConnectDb();
 const app = express();
 
 
-app.use(express.json());
-
-app.use('/api/v1',mainRoute)
-
 // cors
 
 // List of allowed URLs
@@ -39,6 +35,12 @@ app.use(cors({
   },
   credentials: true
 }));
+
+
+app.use(express.json());
+
+app.use('/api/v1',mainRoute)
+
 
 
 
