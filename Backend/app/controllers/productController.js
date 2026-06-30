@@ -2,17 +2,29 @@ const Product = require("../models/Product");
 const httpStatusCode = require("../utils/httpsStatusCode"); // 1. Spelling standard rakh di hai
 const cloudinary = require("cloudinary").v2;
 
+
+
+
 console.log("Cloudinary API Key:", process.env.CLOUDINARY_API_KEY);
 
 class ProductController {
   // ==================== CREATE PRODUCT ====================
   async createProduct(req, res) {
     try {
+
       cloudinary.config({
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
         api_secret: process.env.CLOUDINARY_API_SECRET,
       });
+
+      // 2. Debug log to instantly see what's failing on startup
+      console.log("Cloudinary Config Check:", {
+        cloud_name: !!process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: !!process.env.CLOUDINARY_API_KEY,
+        api_secret: !!process.env.CLOUDINARY_API_SECRET,
+      });
+      
       let requestData = req.body;
 
       if (typeof req.body.data === "string") {
