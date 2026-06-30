@@ -1,32 +1,26 @@
 const Product = require("../models/Product");
 const httpStatusCode = require("../utils/httpsStatusCode"); // 1. Spelling standard rakh di hai
-const cloudinary = require("cloudinary").v2; 
+const cloudinary = require("cloudinary").v2;
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+console.log("Cloudinary API Key:", process.env.CLOUDINARY_API_KEY);
 
 class ProductController {
-  
   // ==================== CREATE PRODUCT ====================
   async createProduct(req, res) {
     try {
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+      });
       let requestData = req.body;
 
-      if (typeof req.body.data === 'string') {
-          requestData = JSON.parse(req.body.data);
+      if (typeof req.body.data === "string") {
+        requestData = JSON.parse(req.body.data);
       }
 
-      const {
-        title,
-        description,
-        price,
-        category,
-        stock,
-        coinRewardEligible,
-      } = requestData;
+      const { title, description, price, category, stock, coinRewardEligible } =
+        requestData;
 
       let imageUrls = [];
       if (req.files && req.files.length > 0) {
@@ -55,7 +49,6 @@ class ProductController {
         message: "Product has been created",
         data: newProduct,
       });
-
     } catch (err) {
       console.error(err);
       return res.status(httpStatusCode.BAD_REQUEST).json({
@@ -67,97 +60,95 @@ class ProductController {
 
   // ==================== GET ALL PRODUCTS ====================
   async getProduct(req, res) {
-     try {
-       const products = await Product.find();
-       return res.status(httpStatusCode.OK).json({
-          success: true,
-          message: "All Products Fetched Successfully",
-          length: products.length,
-          data: products
-       });
-     } catch (err) {
-         return res.status(httpStatusCode.BAD_REQUEST).json({
-           success: false,
-           message: err.message
-         });
-     }
+    try {
+      const products = await Product.find();
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        message: "All Products Fetched Successfully",
+        length: products.length,
+        data: products,
+      });
+    } catch (err) {
+      return res.status(httpStatusCode.BAD_REQUEST).json({
+        success: false,
+        message: err.message,
+      });
+    }
   }
 
   // ==================== EDIT/UPDATE PRODUCT ====================
   async updateProduct(req, res) {
-     try {
-       const { id } = req.params;
-       let requestData = req.body;
+    try {
+      const { id } = req.params;
+      let requestData = req.body;
 
-       if (typeof req.body.data === 'string') {
-          requestData = JSON.parse(req.body.data);
-       }
+      if (typeof req.body.data === "string") {
+        requestData = JSON.parse(req.body.data);
+      }
 
-       // Nayi images handle karne ke liye array
-       let imageUrls = [];
+      // Nayi images handle karne ke liye array
+      let imageUrls = [];
 
-       // Agar edit karte waqt nayi files upload ki hain
-       if (req.files && req.files.length > 0) {
-         for (const file of req.files) {
-           const result = await cloudinary.uploader.upload(file.path, {
-             folder: "product_images",
-           });
-           imageUrls.push(result.secure_url);
-         }
-         // req.body mein images array ko nayi urls se replace/add karein
-         requestData.images = imageUrls;
-       }
-
-       const updatedProduct = await Product.findByIdAndUpdate(id, requestData, {
-          new: true,
-          runValidators: true
-       });
-
-       if (!updatedProduct) {
-          return res.status(httpStatusCode.NOT_FOUND).json({
-             success: false,
-             message: "Product not found"
+      // Agar edit karte waqt nayi files upload ki hain
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: "product_images",
           });
-       }
+          imageUrls.push(result.secure_url);
+        }
+        // req.body mein images array ko nayi urls se replace/add karein
+        requestData.images = imageUrls;
+      }
 
-       return res.status(httpStatusCode.OK).json({
-          success: true,
-          message: "Product Updated successfully",
-          data: updatedProduct
-       });
+      const updatedProduct = await Product.findByIdAndUpdate(id, requestData, {
+        new: true,
+        runValidators: true,
+      });
 
-     } catch (err) {
-        return res.status(httpStatusCode.BAD_REQUEST).json({
-            success: false,
-            message: err.message
+      if (!updatedProduct) {
+        return res.status(httpStatusCode.NOT_FOUND).json({
+          success: false,
+          message: "Product not found",
         });
-     }
+      }
+
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        message: "Product Updated successfully",
+        data: updatedProduct,
+      });
+    } catch (err) {
+      return res.status(httpStatusCode.BAD_REQUEST).json({
+        success: false,
+        message: err.message,
+      });
+    }
   }
 
   // ==================== DELETE PRODUCT ====================
   async deleteProduct(req, res) {
     try {
       const { id } = req.params;
-      
+
       const productDelete = await Product.findByIdAndDelete(id);
 
       if (!productDelete) {
         return res.status(httpStatusCode.NOT_FOUND).json({
-            success: false,
-            message: "Product Not found"
+          success: false,
+          message: "Product Not found",
         });
       }
 
       return res.status(httpStatusCode.OK).json({
-         success: true, // Fixed: Pehle yahan false tha
-         message: "Product has been deleted"
+        success: true, // Fixed: Pehle yahan false tha
+        message: "Product has been deleted",
       });
-
     } catch (err) {
-        return res.status(httpStatusCode.BAD_REQUEST).json({
-            success: false,
-            message: err.message
-        });
+      return res.status(httpStatusCode.BAD_REQUEST).json({
+        success: false,
+        message: err.message,
+      });
     }
   }
 }
