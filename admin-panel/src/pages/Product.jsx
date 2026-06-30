@@ -325,8 +325,8 @@ export default function Products({ mode }) {
         <Fade in={openModal}>
           <Box sx={{
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-            width: { xs: '90%', sm: 500 }, 
-            maxHeight: '85vh',
+            width: { xs: '90%', sm: 550 }, 
+            maxHeight: '90vh',
             overflowY: 'auto',
             bgcolor: mode === 'dark' ? '#0f172a' : '#ffffff',
             border: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.1)'}`,
@@ -343,27 +343,32 @@ export default function Products({ mode }) {
                   label="Product Name" required fullWidth
                   value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
                   InputLabelProps={{ style: { fontFamily: '"Plus Jakarta Sans"' } }}
+                  sx={{mb:2}}
                 />
                 <TextField 
                   label="Category" required fullWidth
                   value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})}
                   InputLabelProps={{ style: { fontFamily: '"Plus Jakarta Sans"' } }}
+                  sx={{mb:1}}
                 />
                 <TextField 
                   label="Price (INR)" type="number" required fullWidth
                   value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})}
                   InputLabelProps={{ style: { fontFamily: '"Plus Jakarta Sans"' } }}
+                  sx={{mb:1}}
                 />
                 <TextField 
                   label="Stock Units" type="number" required fullWidth
                   value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})}
                   InputLabelProps={{ style: { fontFamily: '"Plus Jakarta Sans"' } }}
+                  sx={{mb:1}}
                 />
                 
                 <TextField 
                   label="Product Description" required fullWidth multiline rows={3}
                   value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})}
                   InputLabelProps={{ style: { fontFamily: '"Plus Jakarta Sans"' } }}
+                  sx={{mb:1}}
                 />
 
                 {/* 🖼️ HIGH-TECH FILE PICKER INTERFACE (Keeps your clean design) */}
