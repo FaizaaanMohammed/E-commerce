@@ -17,8 +17,10 @@ export const endpoints = {
 
   // 📦 Core E-commerce Entities
   products: {
-    getAll: () => API.get('/v1/products'),
-    create: (data) => API.post('/v1/products', data),
+    getAll: () => API.get('/v1/product/All-product'),
+    create: (data) => API.post('/v1/product/create-product', data),
+    update: (id, data) => API.put(`/v1/product/update-product/${id}`, data), 
+    delete: (id) => API.delete(`/v1/product/delete-product/${id}`, id)
   },
   orders: {
     getAll: () => API.get('/v1/orders'),

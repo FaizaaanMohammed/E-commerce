@@ -2,49 +2,59 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, Card, Typography, useTheme, Button, TextField, InputAdornment, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
-  Chip, IconButton, Modal, Backdrop, Fade 
+  Chip, IconButton, Modal, Backdrop, Fade, CircularProgress,
+  Snackbar, Alert // 1. Added clean notification controllers
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'; // Icon for image choice selection
+import { endpoints } from '../api/endpoints';
 
 export default function Products({ mode }) {
   const theme = useTheme();
   
-  // 🔌 LIVE API STATES
-  const [products, setProducts] = useState([]);
+  // 🔌 Core State Matrices
+  const [products, setProducts] = useState([]); 
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 📝 MODAL & FORM STATES (Combined for Add & Edit)
+  // 🔔 Notification Alert Bar Configuration State
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  // 📝 Modal Form Controller Interfaces
   const [openModal, setOpenModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProductId, setCurrentProductId] = useState(null);
+  
+  // 🔄 Dynamic form mappings adapted for raw multi-part binary media uploads
   const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    price: '',
-    stock: ''
+    name: '',       
+    category: '',   
+    price: '',      
+    stock: '',      
+    description: '',
+    imageFile: null // 2. Changed tracking node from URL string to explicit File object
   });
 
-  // 📡 1. GET ALL PRODUCTS FROM API
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  /**
+   * 📡 Pull product assets from the repository layer
+   */
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      // const response = await axios.get('/api/v1/products'); // 👈 Apni API URL yahan dalo bhai
-      // setProducts(response.data.products);
-      
-      // Temporary Premium Fallback Data
-      setProducts([
-        { _id: 'PROD001', name: 'Nexus Cyber Sneakers', category: 'Footwear', price: 8999, stock: 42 },
-        { _id: 'PROD002', name: 'Alpha Mechanical Keyboard', category: 'Accessories', price: 4500, stock: 5 },
-        { _id: 'PROD003', name: 'Quantum Liquid Cooler', category: 'Hardware', price: 12999, stock: 0 },
-      ]);
+      const response = await endpoints.products.getAll();
+      setProducts(response.data?.data || []);
     } catch (err) {
-      console.error("Error fetching products from backend:", err);
+      console.error("Data tracking pipeline execution failed:", err);
+      setProducts([]); 
     } finally {
       setLoading(false);
     }
@@ -54,79 +64,94 @@ export default function Products({ mode }) {
     fetchProducts();
   }, []);
 
-  // ➕ OPEN MODAL FOR CREATING NEW PRODUCT
   const handleOpenAddModal = () => {
     setIsEditing(false);
-    setFormData({ name: '', category: '', price: '', stock: '' });
+    setFormData({ name: '', category: '', price: '', stock: '', description: '', imageFile: null });
     setOpenModal(true);
   };
 
-  // ✏️ OPEN MODAL FOR EDITING EXISTING PRODUCT
   const handleOpenEditModal = (product) => {
     setIsEditing(true);
     setCurrentProductId(product._id);
     setFormData({
-      name: product.name,
+      name: product.title,
       category: product.category,
       price: product.price,
-      stock: product.stock
+      stock: product.stock,
+      description: product.description || '',
+      imageFile: null // Reset file hook on edit initialization loop
     });
     setOpenModal(true);
   };
 
-  // 💾 SUBMIT FORM (CREATE OR UPDATE)
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData({ ...formData, imageFile: e.target.files[0] });
+    }
+  };
+
+  /**
+   * 💾 MULTIPART ENCODING FORM DISPATCH MATRIX
+   */
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     
-    const parsedData = {
-      ...formData,
-      price: Number(formData.price),
-      stock: Number(formData.stock)
-    };
+    // ⚠️ CRITICAL: Use standard FormData instead of JSON payload object matrices when sending files
+    const dataWrapper = new FormData();
+    dataWrapper.append('title', formData.name);
+    dataWrapper.append('category', formData.category);
+    dataWrapper.append('price', Number(formData.price));
+    dataWrapper.append('stock', Number(formData.stock));
+    dataWrapper.append('description', formData.description);
+    
+    // Append binary image stream if chosen by workspace admin
+    if (formData.imageFile) {
+      dataWrapper.append('images', formData.imageFile); 
+    }
 
     try {
+      setLoading(true);
       if (isEditing) {
-        // 📡 UPDATE API CALL
-        // await axios.put(`/api/v1/products/${currentProductId}`, parsedData);
-        
-        setProducts(products.map(p => p._id === currentProductId ? { ...p, ...parsedData } : p));
-        alert("Product updated successfully!");
+        await endpoints.products.update(currentProductId, dataWrapper);
+        setSnackbar({ open: true, message: "Product updated successfully!", severity: 'success' });
+        await fetchProducts(); // Refresh dataset array loop to align newly updated cloud images maps
       } else {
-        // 📡 CREATE API CALL
-        // const response = await axios.post('/api/v1/products', parsedData);
-        // setProducts([...products, response.data.product]);
-
-        const newProductPlaceholder = {
-          _id: `PROD${Math.floor(Math.random() * 900) + 100}`,
-          ...parsedData
-        };
-        setProducts([...products, newProductPlaceholder]);
-        alert("Product added successfully!");
+        await endpoints.products.create(dataWrapper);
+        setSnackbar({ open: true, message: "Product initialized and added to core database ledger!", severity: 'success' });
+        await fetchProducts(); 
       }
       setOpenModal(false);
     } catch (err) {
-      console.error("Form submission failed:", err);
+      console.error("Server synchronization failed:", err);
+      setSnackbar({ open: true, message: err.response?.data?.message || "Failed to commit product asset updates.", severity: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 📡 2. DELETE PRODUCT BY ID API
   const handleDeleteProduct = async (id) => {
-    if (window.confirm("Bhai, pakka product udaana hai?")) {
+    if (window.confirm("Are you sure you want to permanently remove this product component asset?")) {
       try {
-        // await axios.delete(`/api/v1/products/${id}`); // 👈 Delete API path yahan dalo
-        setProducts(products.filter(item => item._id !== id)); // Optimistic UI update
-        alert("Product successfully deleted!");
+        setLoading(true);
+        await endpoints.products.delete(id);
+        setProducts(products.filter(item => item._id !== id));
+        setSnackbar({ open: true, message: "Asset successfully wiped from data ledger.", severity: 'success' });
       } catch (err) {
-        console.error("Delete operation failed:", err);
+        console.error("Removal transaction operation execution halted:", err);
+        setSnackbar({ open: true, message: "Server denied deletion protocol intercept.", severity: 'error' });
+      } finally {
+        setLoading(false);
       }
     }
   };
 
-  // Search Filter logic
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = (products || []).filter(product => {
+    if (!product || !product.title || !product.category) return false;
+    return (
+      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   const getStatusChip = (stock) => {
     if (stock === 0) return <Chip label="Out of Stock" size="small" sx={{ bgcolor: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', fontWeight: 700 }} />;
@@ -137,7 +162,7 @@ export default function Products({ mode }) {
   return (
     <Box component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }} sx={{ width: '100%', pb: 4 }}>
       
-      {/* Page Title & Actions Header */}
+      {/* Header Viewport Interface */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 5 }}>
         <Box>
           <Typography variant="h3" sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 800, color: theme.palette.text.primary, mb: 0.5, letterSpacing: '-1px' }}>
@@ -148,7 +173,6 @@ export default function Products({ mode }) {
           </Typography>
         </Box>
 
-        {/* Create Product Button */}
         <Button
           component={motion.button}
           whileHover={{ scale: 1.02 }}
@@ -163,8 +187,7 @@ export default function Products({ mode }) {
             fontFamily: '"Plus Jakarta Sans", sans-serif',
             fontWeight: 700,
             fontSize: '0.9rem',
-            px: 3,
-            py: 1.5,
+            px: 3, py: 1.5,
             boxShadow: '0 8px 20px rgba(6, 182, 212, 0.25)',
             '&:hover': { background: 'linear-gradient(135deg, #06b6d4 30%, #3b82f6 100%)' }
           }}
@@ -173,7 +196,7 @@ export default function Products({ mode }) {
         </Button>
       </Box>
 
-      {/* Modern Sub-Header Search Tool Control */}
+      {/* Query Search Panel */}
       <Box sx={{ mb: 4, width: '100%' }}>
         <TextField
           fullWidth
@@ -191,7 +214,6 @@ export default function Products({ mode }) {
             '& .MuiOutlinedInput-root': {
               bgcolor: mode === 'dark' ? '#0f172a' : '#ffffff',
               borderRadius: '16px',
-              border: 'none',
               '& fieldset': { border: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0,0,0,0.06)'}` },
               '&:hover fieldset': { borderColor: '#06b6d4' },
               '&.Mui-focused fieldset': { borderColor: '#06b6d4', borderWidth: '1px' },
@@ -201,8 +223,17 @@ export default function Products({ mode }) {
         />
       </Box>
 
-      {/* 📊 ADVANCED INVENTORY DATA LEDGER TABLE */}
-      <Card sx={{ bgcolor: mode === 'dark' ? '#0f172a' : '#ffffff', border: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0,0,0,0.06)'}`, borderRadius: '24px', p: 3, width: '100%', boxShadow: mode === 'dark' ? 'none' : '0 10px 30px rgba(0,0,0,0.02)' }}>
+      {/* Primary Data Table Ledger Card */}
+      <Card 
+        sx={{ 
+          bgcolor: mode === 'dark' ? '#0f172a' : '#ffffff', 
+          border: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0,0,0,0.06)'}`, 
+          borderRadius: '24px', 
+          p: 3, 
+          width: '100%', 
+          boxShadow: mode === 'dark' ? 'none' : '0 10px 30px rgba(0,0,0,0.02)' 
+        }}
+      >
         <TableContainer>
           <Table>
             <TableHead>
@@ -216,60 +247,74 @@ export default function Products({ mode }) {
               </TableRow>
             </TableHead>
             <TableBody>
-              <AnimatePresence>
-                {filteredProducts.map((product) => (
-                  <TableRow 
-                    key={product._id} 
-                    component={motion.tr}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    sx={{ '& td': { borderBottom: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)'}`, color: theme.palette.text.primary, py: 2.5 } }}
-                  >
-                    <TableCell sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700, fontSize: '0.95rem' }}>
-                      {product.name}
-                    </TableCell>
-                    
-                    <TableCell sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 500, color: theme.palette.text.secondary }}>
-                      {product.category}
-                    </TableCell>
-                    
-                    <TableCell sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, fontSize: '1rem' }}>
-                      ₹{product.price.toLocaleString('en-IN')}
-                    </TableCell>
-                    
-                    <TableCell sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 600 }}>
-                      {product.stock} Units
-                    </TableCell>
-                    
-                    <TableCell>{getStatusChip(product.stock)}</TableCell>
-                    
-                    <TableCell align="right">
-                      <Box display="flex" justifyContent="flex-end" gap={1}>
-                        <IconButton 
-                          onClick={() => handleOpenEditModal(product)}
-                          sx={{ color: '#06b6d4', border: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}`, borderRadius: '10px', p: 1 }}
-                        >
-                          <EditIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                        <IconButton 
-                          onClick={() => handleDeleteProduct(product._id)} 
-                          sx={{ color: '#f43f5e', border: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}`, borderRadius: '10px', p: 1 }}
-                        >
-                          <DeleteIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </AnimatePresence>
+              {loading && products.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                    <CircularProgress size={36} sx={{ color: '#06b6d4' }} />
+                  </TableCell>
+                </TableRow>
+              ) : filteredProducts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 6, fontFamily: '"Plus Jakarta Sans"', color: theme.palette.text.secondary, fontWeight: 500 }}>
+                    No matching structural product elements found in current database segment.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <AnimatePresence mode="popLayout">
+                  {filteredProducts.map((product) => (
+                    <TableRow 
+                      key={product._id} 
+                      component={motion.tr}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      sx={{ '& td': { borderBottom: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)'}`, color: theme.palette.text.primary, py: 2.5 } }}
+                    >
+                      <TableCell sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700, fontSize: '0.95rem' }}>
+                        {product.title}
+                      </TableCell>
+                      
+                      <TableCell sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 500, color: theme.palette.text.secondary }}>
+                        {product.category}
+                      </TableCell>
+                      
+                      <TableCell sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, fontSize: '1rem' }}>
+                        ₹{(product.price || 0).toLocaleString('en-IN')}
+                      </TableCell>
+                      
+                      <TableCell sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 600 }}>
+                        {product.stock} Units
+                      </TableCell>
+                      
+                      <TableCell>{getStatusChip(product.stock)}</TableCell>
+                      
+                      <TableCell align="right">
+                        <Box display="flex" justifyContent="flex-end" gap={1}>
+                          <IconButton 
+                            onClick={() => handleOpenEditModal(product)}
+                            sx={{ color: '#06b6d4', border: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}`, borderRadius: '10px', p: 1 }}
+                          >
+                            <EditIcon sx={{ fontSize: 18 }} />
+                          </IconButton>
+                          <IconButton 
+                            onClick={() => handleDeleteProduct(product._id)} 
+                            sx={{ color: '#f43f5e', border: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}`, borderRadius: '10px', p: 1 }}
+                          >
+                            <DeleteIcon sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </AnimatePresence>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
       </Card>
 
-      {/* 📋 PREMIUM DYNAMIC MODAL (ADD & EDIT) */}
+      {/* Add / Edit Inventory Modal Window (Expanded with Dynamic Inputs) */}
       <Modal
         open={openModal}
         onClose={() => setOpenModal(false)}
@@ -280,18 +325,20 @@ export default function Products({ mode }) {
         <Fade in={openModal}>
           <Box sx={{
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-            width: { xs: '90%', sm: 450 },
+            width: { xs: '90%', sm: 500 }, 
+            maxHeight: '85vh',
+            overflowY: 'auto',
             bgcolor: mode === 'dark' ? '#0f172a' : '#ffffff',
             border: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.1)'}`,
             borderRadius: '24px', p: 4, outline: 'none',
             boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
           }}>
             <Typography variant="h5" sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 800, mb: 3, color: theme.palette.text.primary }}>
-              {isEditing ? '⚡ Edit Product details' : '✨ Add New Product'}
+              {isEditing ? '⚡ Edit Product Details' : '✨ Add New Product'}
             </Typography>
 
             <form onSubmit={handleFormSubmit}>
-              <Box display="flex" flexDirection="column" gap={2.5}>
+              <Box display="flex" flexDirection="column" gap={2}>
                 <TextField 
                   label="Product Name" required fullWidth
                   value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -312,20 +359,64 @@ export default function Products({ mode }) {
                   value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})}
                   InputLabelProps={{ style: { fontFamily: '"Plus Jakarta Sans"' } }}
                 />
+                
+                <TextField 
+                  label="Product Description" required fullWidth multiline rows={3}
+                  value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  InputLabelProps={{ style: { fontFamily: '"Plus Jakarta Sans"' } }}
+                />
+
+                {/* 🖼️ HIGH-TECH FILE PICKER INTERFACE (Keeps your clean design) */}
+                <Box sx={{ mt: 1, mb: 2 }}>
+                  <input
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="contained-button-file"
+                    type="file"
+                    onChange={handleFileChange}
+                    required={!isEditing} // Mandatory only during fresh creations
+                  />
+                  <label htmlFor="contained-button-file">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      startIcon={<CloudUploadIcon />}
+                      sx={{
+                        width: '100%',
+                        py: 1.8,
+                        borderRadius: '12px',
+                        textTransform: 'none',
+                        fontFamily: '"Plus Jakarta Sans"',
+                        fontWeight: 600,
+                        borderStyle: 'dashed',
+                        borderWidth: '2px',
+                        borderColor: formData.imageFile ? '#10b981' : '#06b6d4',
+                        color: formData.imageFile ? '#10b981' : '#06b6d4',
+                        '&:hover': {
+                          borderStyle: 'dashed',
+                          borderWidth: '2px',
+                          borderColor: '#3b82f6',
+                          backgroundColor: 'rgba(6, 182, 212, 0.04)'
+                        }
+                      }}
+                    >
+                      {formData.imageFile 
+                        ? `Selected: ${formData.imageFile.name.substring(0, 25)}... ✅` 
+                        : isEditing ? "Change Product Image Asset (Optional)" : "Choose Product Image File 📁"}
+                    </Button>
+                  </label>
+                </Box>
 
                 <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
                   <Button 
                     onClick={() => setOpenModal(false)}
-                    sx={{ color: theme.palette.text.secondary, textTransform: 'none', fontFamily: '"Plus Jakarta Sans"', fontWeight: 600 }}
+                    sx={{ color: "white", textTransform: 'none', fontFamily: '"Plus Jakarta Sans"', fontWeight: 600, bgcolor: "#f43f5e", borderRadius: "10px", px: 2, py: 1, '&:hover': { bgcolor: '#e11d48' }, mr:1 }}
                   >
                     Cancel
                   </Button>
                   <Button 
-                    type="submit" variant="contained"
-                    sx={{
-                      background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-                      textTransform: 'none', borderRadius: '10px', fontWeight: 700, fontFamily: '"Plus Jakarta Sans"'
-                    }}
+                    type="submit" variant="contained" disabled={loading}
+                    sx={{ background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)', textTransform: 'none', borderRadius: '10px', fontWeight: 700, fontFamily: '"Plus Jakarta Sans"', px: 2 }}
                   >
                     {isEditing ? 'Save Changes' : 'Add Product'}
                   </Button>
@@ -335,6 +426,18 @@ export default function Products({ mode }) {
           </Box>
         </Fade>
       </Modal>
+
+      {/* 🔮 GLOBAL NOTIFICATION CENTER BAR */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={4000} 
+        onClose={handleCloseSnackbar} 
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} variant="filled" sx={{ width: '100%', fontFamily: '"Plus Jakarta Sans"', borderRadius: '10px' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
     </Box>
   );

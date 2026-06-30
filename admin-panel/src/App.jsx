@@ -9,15 +9,19 @@ import User from './pages/User';
 import WalletSettings from './pages/WalletSetting';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyOtp from './pages/VerifyOtp'; // 1. Imported the OTP Verification component
 
 export default function App() {
   const [activePage, setActivePage] = useState('dashboard');
   const [mode, setMode] = useState('dark'); 
   const [isAuthenticated, setIsAuthenticated] = useState(false); 
-  const [authView, setAuthView] = useState('login'); 
+  const [authView, setAuthView] = useState('login'); // Supports 'login' | 'register' | 'verify_otp'
+  const [temporaryEmail, setTemporaryEmail] = useState(''); // 2. Stores email context between Registration and OTP screens
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // 📡 AUTOMATIC TOKEN DETECTOR ON LOAD
+  /**
+   * Hook to automatically detect valid user tokens on initialization
+   */
   useEffect(() => {
     const checkToken = () => {
       const token = localStorage.getItem('token'); 
@@ -31,6 +35,9 @@ export default function App() {
     checkToken();
   }, []);
 
+  /**
+   * Material-UI Custom Design Theme Provider Configurations
+   */
   const theme = useMemo(() => createTheme({
     palette: {
       mode,
@@ -51,6 +58,9 @@ export default function App() {
     setMode((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
+  /**
+   * Renders the corresponding internal panel component based on active page state
+   */
   const renderPage = () => {
     switch (activePage) {
       case 'dashboard': return <Dashboard mode={mode} />;
@@ -60,6 +70,22 @@ export default function App() {
       case 'users': return <User mode={mode} />;
       case 'wallet_settings': return <WalletSettings mode={mode} />;
       default: return <Dashboard mode={mode} />;
+    }
+  };
+
+  /**
+   * Conditional layout handler managing unauthenticated state routing views
+   */
+  const renderAuthViews = () => {
+    switch (authView) {
+      case 'login':
+        return <Login mode={mode} setAuth={setIsAuthenticated} setAuthView={setAuthView} />;
+      case 'register':
+        return <Register mode={mode} setAuthView={setAuthView} setTemporaryEmail={setTemporaryEmail} />; 
+      case 'verify_otp':
+        return <VerifyOtp mode={mode} setAuthView={setAuthView} temporaryEmail={temporaryEmail} />; 
+      default:
+        return <Login mode={mode} setAuth={setIsAuthenticated} setAuthView={setAuthView} />;
     }
   };
 
@@ -80,13 +106,9 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       {!isAuthenticated ? (
-        authView === 'login' ? (
-          <Login mode={mode} setAuth={setIsAuthenticated} setAuthView={setAuthView} />
-        ) : (
-          <Register mode={mode} setAuthView={setAuthView} />
-        )
+        renderAuthViews() // Dynamic switcher for Auth sub-views
       ) : (
-        <DashboardLayout activePage={activePage} setActivePage={setActivePage} mode={mode} toggleTheme={toggleTheme}>
+        <DashboardLayout activePage={activePage} setActivePage={setActivePage} mode={mode} toggleTheme={toggleTheme} setAuth={setIsAuthenticated}>
           {renderPage()}
         </DashboardLayout>
       )}
