@@ -3,6 +3,7 @@ import { Box, Card, Typography, TextField, Button, InputAdornment, useTheme, Lin
 import { motion } from 'framer-motion';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
+import { endpoints } from '../api/endpoints';
 
 export default function Login({ mode, setAuth, setAuthView }) {
   const theme = useTheme();
@@ -10,19 +11,32 @@ export default function Login({ mode, setAuth, setAuthView }) {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      const fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-      localStorage.setItem('token', fakeToken); 
-      alert("Bhai, Login successful! Engine starting... 🚀");
-      setAuth(true); 
-    } catch (err) {
-      console.error("Login verification failed:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  try {
+    setLoading(true);
+    
+    // 📡 1. LIVE BACKEND ENDPOINT INTEGRATION
+    // formData ke andar email aur password backend server pipeline par deliver hoga
+    const response = await endpoints.auth.login(formData);
+    
+    // 💾 2. LIVE TOKEN STORAGE MATRIX
+    // Backend se aaya hua original server token secure state loop mein commit hoga
+    const token = response.data.token; 
+    localStorage.setItem('token', token); 
+    
+    alert("Bhai, Login successful! Engine starting... 🚀");
+    
+    // 🔓 3. OPEN GATEKEEPER WORKSPACE LAYOUT
+    setAuth(true); 
+    
+  } catch (err) {
+    console.error("Login verification failed:", err);
+    // ⚠️ User notifications fallback matrix
+    alert(err.response?.data?.message || "Bhai, Email ya Password galat hai! Dubara check karo. ❌");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Box sx={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: mode === 'dark' ? '#02040a' : '#f1f5f9', px: { xs: 2, sm: 4 }, py: 4, position: 'relative', overflow: 'hidden', boxSizing: 'border-box' }}>
