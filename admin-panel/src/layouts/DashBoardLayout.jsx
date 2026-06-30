@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -7,6 +7,9 @@ import {
   useTheme,
   useMediaQuery,
   SwipeableDrawer,
+  Menu,         // 👈 Added Menu for dropdown
+  MenuItem,     // 👈 Added MenuItem
+  ListItemIcon, // 👈 Added for nice icons inside the menu
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -19,6 +22,7 @@ import DarkModeIcon from "@mui/icons-material/DarkMode";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import SettingsSuggestIcon from "@mui/icons-material/SettingsSuggest";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import LogoutIcon from "@mui/icons-material/Logout"; // 👈 Added Logout Icon
 
 const itemVariants = {
   hover: {
@@ -35,10 +39,49 @@ export default function DashboardLayout({
   setActivePage,
   mode,
   toggleTheme,
+  setAuth, // 👈 Destructure setAuth here to log out and close workspace layout
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null); // 👈 Profile menu anchor point
+  const [adminName, setAdminName] = useState("Admin"); // 👈 Dynamic string allocation container
+  
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const openMenu = Boolean(anchorEl);
+
+  // 📡 DYNAMIC NAMESPACE DECRYPTION MATRIX
+  useEffect(() => {
+    // If you store username/admin details upon login, grab it here.
+    // e.g., localStorage.setItem('adminName', response.data.user.name)
+    const storedName = localStorage.getItem("adminName");
+    if (storedName) {
+      setAdminName(storedName);
+    }
+  }, []);
+
+  // Get the first initial dynamically
+  const nameInitial = adminName.trim().charAt(0).toUpperCase() || "A";
+
+  const handleProfileClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileClose = () => {
+    setAnchorEl(null);
+  };
+
+  // 🧹 SYSTEM WORKSPACE REBOOT (LOGOUT INTERCEPTOR)
+  const handleLogout = () => {
+    handleProfileClose();
+    localStorage.removeItem("token"); // Removes authentication token matrix
+    localStorage.removeItem("adminName"); // Cleanup name cache data block
+    
+    if (setAuth) {
+      setAuth(false); // Unlocks workspace layout layer back to login wall
+    } else {
+      window.location.reload(); // Fallback hard redirect
+    }
+  };
 
   const menuItems = [
     { text: "Dashboard", icon: <DashboardIcon sx={{ fontSize: 20 }} />, id: "dashboard" },
@@ -113,12 +156,10 @@ export default function DashboardLayout({
                 {isActive && (
                   <Box
                     component={motion.div}
-                    // 🎯 unique layoutId tracking maintain rakha hai taaki gayab na ho
                     layoutId={isMobileDrawer ? "mobileActiveGlow" : "desktopActiveGlow"}
                     style={{
                       position: "absolute",
                       top: 0, left: 0, right: 0, bottom: 0,
-                      // 🔥 TERA PEHLE WALA EXACT PREMIUM DESIGN CAPSULE BACKGROUND BACK FIXED
                       background: mode === "dark"
                         ? "linear-gradient(90deg, rgba(6, 182, 212, 0.15) 0%, rgba(59, 130, 246, 0.04) 100%)"
                         : "linear-gradient(90deg, rgba(6, 182, 212, 0.12) 0%, rgba(59, 130, 246, 0.03) 100%)",
@@ -150,7 +191,13 @@ export default function DashboardLayout({
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: theme.palette.background.paper, p: 2 }}>
           <IconButton onClick={() => setMobileOpen(true)} sx={{ color: "#06b6d4" }}><MenuIcon /></IconButton>
           <Typography sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 800, color: theme.palette.text.primary, fontSize: "1.1rem" }}>NEXUS OS</Typography>
-          <Avatar sx={{ background: "linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)", width: 32, height: 32 }}>F</Avatar>
+          {/* Mobile Profile Trigger */}
+          <Avatar 
+            onClick={handleProfileClick}
+            sx={{ background: "linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)", width: 32, height: 32, cursor: "pointer", fontSize: "0.9rem", fontWeight: 800 }}
+          >
+            {nameInitial}
+          </Avatar>
         </Box>
       )}
 
@@ -181,12 +228,20 @@ export default function DashboardLayout({
                   </IconButton>
                 </Box>
 
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, bgcolor: theme.palette.background.paper, p: "0 16px 0 6px", borderRadius: "30px", border: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.05)"}`, height: 42, boxSizing: "border-box" }}>
+                {/* 👤 INTERACTIVE SYSTEM PROFILE CAPITOL */}
+                <Box 
+                  onClick={handleProfileClick}
+                  sx={{ 
+                    display: "flex", alignItems: "center", gap: 1.2, bgcolor: theme.palette.background.paper, p: "0 16px 0 6px", borderRadius: "30px", 
+                    border: `1px solid ${openMenu ? "#06b6d4" : mode === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.05)"}`, 
+                    height: 42, boxSizing: "border-box", cursor: "pointer", transition: "all 0.2s ease"
+                  }}
+                >
                   <Avatar sx={{ background: "linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)", color: theme.palette.text.primary, width: 30, height: 30, fontSize: "1rem", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ transform: "translateY(-0.5px)" }}>F</span>
+                    <span style={{ transform: "translateY(-0.5px)" }}>{nameInitial}</span>
                   </Avatar>
                   <Typography sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', color: theme.palette.text.primary, fontWeight: 700, fontSize: "0.9rem", display: "flex", alignItems: "center", m: 0, p: 0, lineHeight: 1 }}>
-                    Faizan
+                    {adminName}
                   </Typography>
                 </Box>
               </Box>
@@ -202,6 +257,46 @@ export default function DashboardLayout({
           </Box>
         </Box>
       </Box>
+
+      {/* 🔮 DROP DOWN SYSTEM UTILITY CONSOLE */}
+      <Menu
+        anchorEl={anchorEl}
+        open={openMenu}
+        onClose={handleProfileClose}
+        onClick={handleProfileClose}
+        PaperProps={{
+          sx: {
+            mt: 1.5,
+            bgcolor: theme.palette.background.paper,
+            backdropFilter: "blur(20px)",
+            borderRadius: "16px",
+            border: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
+            boxShadow: mode === "dark" ? "0 10px 30px rgba(0,0,0,0.5)" : "0 10px 25px rgba(0,0,0,0.08)",
+            minWidth: 160,
+            overflow: "visible",
+            "&::before": {
+              content: '""', display: "block", position: "absolute", top: 0, right: 18, width: 10, height: 10,
+              bgcolor: theme.palette.background.paper, transform: "translateY(-50%) rotate(45deg)", zIndex: 0,
+              borderTop: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
+              borderLeft: `1px solid ${mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
+            }
+          },
+        }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      >
+        <MenuItem 
+          onClick={handleLogout} 
+          sx={{ 
+            py: 1.2, px: 2, borderRadius: "10px", mx: 0.5,
+            fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: "0.9rem", fontWeight: 600, color: "#f43f5e",
+            "&:hover": { bgcolor: mode === "dark" ? "rgba(244, 63, 94, 0.1)" : "rgba(244, 63, 94, 0.05)" } 
+          }}
+        >
+          <ListItemIcon><LogoutIcon sx={{ color: "#f43f5e", fontSize: 20 }} /></ListItemIcon>
+          Term Out / Logout
+        </MenuItem>
+      </Menu>
 
       <SwipeableDrawer anchor="left" open={mobileOpen} onClose={() => setMobileOpen(false)} onOpen={() => setMobileOpen(true)} PaperProps={{ sx: { bgcolor: theme.palette.background.default, width: 260 } }}>
         <SidebarElement isMobileDrawer={true} />
