@@ -16,7 +16,7 @@ class orderController {
     if (!cart || cart.products.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Your Cart is empty ! Please add someitems to cart!",
+        message: "Your Cart is empty ! Please add some Items to cart!",
       });
     }
 
@@ -123,6 +123,53 @@ class orderController {
       return res.status(500).json({ success: false, message: err.message });
     }
   }
+  // 🔄 4. UPDATE ORDER STATUS (ADMIN ACTION DROPDOWN)
+async updateOrderStatus(req, res) {
+  try {
+    const { orderId } = req.params; // URL se order ID nikalenge
+    const { status } = req.body;    // Frontend dropdown se badla hua status aayega ('Shipped', 'Delivered', etc.)
+
+    // Validation check: Status khali nahi hona chahiye
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: "Status value bhejna zaroori hai bhai!",
+      });
+    }
+
+    // Database mein order ka status dhoondh kar update karenge[cite: 1]
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { orderStatus: status }, // Schema ke orderStatus field mein save hoga[cite: 1]
+      { new: true } // Taaki hume updated data response mein mile
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not Found in DataBase!",
+      });
+    }
+
+    // 🪙 GAMIFIED WALLET SYSTEM RULE[cite: 1]: 
+   
+    if (status === "Delivered") {
+      console.log(`Order ${orderId} delivered . User get ${updatedOrder.coinsEarnedFromOrder} coins reward !`);
+      
+      // TODO: Jab wallet module connect karenge, toh yahan User.findByIdAndUpdate chala kar 
+      // user ke coinBalance mein 'updatedOrder.coinsEarnedFromOrder' plus kar denge[cite: 1].
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Order status successfully Changed '${status}'!`,
+      data: updatedOrder,
+    });
+
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+}
 }
 
 module.exports = new orderController();

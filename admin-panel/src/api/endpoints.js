@@ -23,7 +23,7 @@ export const endpoints = {
     delete: (id) => API.delete(`/v1/product/delete-product/${id}`, id)
   },
   orders: {
-    getAll: () => API.get('/v1/orders'),
+    getAll: () => API.get('/v1/orders/admin/all-orders'),
   },
   reviews:{
      getAllReveiews:()=> API.get(`v1/reviews/all-reviews`),
