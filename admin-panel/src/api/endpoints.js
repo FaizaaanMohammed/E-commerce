@@ -24,6 +24,7 @@ export const endpoints = {
   },
   orders: {
     getAll: () => API.get('/v1/orders/admin/all-orders'),
+    updateStatus :(id ,data) => API.put(`/v1/orders/admin/update-status/${id}`,{status:data})
   },
   reviews:{
      getAllReveiews:()=> API.get(`v1/reviews/all-reviews`),

@@ -129,11 +129,13 @@ async updateOrderStatus(req, res) {
     const { orderId } = req.params; // URL se order ID nikalenge
     const { status } = req.body;    // Frontend dropdown se badla hua status aayega ('Shipped', 'Delivered', etc.)
 
+    console.log("🔥 BACKEND HIT HUA! Order ID:", orderId, "Naya Status:", status);
+
     // Validation check: Status khali nahi hona chahiye
     if (!status) {
       return res.status(400).json({
         success: false,
-        message: "Status value bhejna zaroori hai bhai!",
+        message: "Status value sending will mandatory!",
       });
     }
 
