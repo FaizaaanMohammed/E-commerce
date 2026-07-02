@@ -27,7 +27,7 @@ export const endpoints = {
     updateStatus :(id ,data) => API.put(`/v1/orders/admin/update-status/${id}`,{status:data})
   },
   reviews:{
-     getAllReveiews:()=> API.get(`v1/reviews/all-reviews`),
+     getAllReveiews:()=> API.get(`/v1/reviews/all-reviews`),
      postReview:()=>API.post('/v1/add-review')
   }
 };
