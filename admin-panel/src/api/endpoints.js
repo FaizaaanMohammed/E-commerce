@@ -26,7 +26,7 @@ export const endpoints = {
     getAll: () => API.get('/v1/orders'),
   },
   reviews:{
-     getAllReveiews:()=> API.get(`v1/product-review`),
+     getAllReveiews:()=> API.get(`v1/reviews/all-reviews`),
      postReview:()=>API.post('/v1/add-review')
   }
 };
