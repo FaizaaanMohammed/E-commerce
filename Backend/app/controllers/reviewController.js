@@ -7,9 +7,8 @@ class reviewController {
   async addReview(req, res) {
     try {
       const { productId, rating, comment } = req.body;
-      const adminId = req?.admin?.id; 
+      const adminId = req?.admin?.id;
 
-      
       const product = await Product.findById(productId);
       if (!product) {
         return res.status(httpStausCode.NOT_FOUND).json({
@@ -22,7 +21,6 @@ class reviewController {
       let alreadyReviewed = await Review.findOne({ productId, adminId });
 
       if (alreadyReviewed) {
-       
         alreadyReviewed.rating = rating;
         alreadyReviewed.comment = comment;
         await alreadyReviewed.save();
@@ -57,16 +55,40 @@ class reviewController {
     try {
       const { productId } = req.params;
 
-      
       const reviews = await Review.find({ productId }).populate({
         path: "adminId",
-        select: "name email", 
+        select: "name email",
       });
 
       return res.status(httpStausCode.OK).json({
         success: true,
         count: reviews.length,
         data: reviews,
+      });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  // get All Reviews for Admin Panel
+
+  async getAllReviewsForAdmin(req, res) {
+    try {
+      const reviews = await Review.find()
+        .populate({
+          path: "productId",
+          select: "title",
+        })
+        .populate({
+          path: "adminId",
+          select: "name email",
+        })
+        .sort({ createdAt: -1 });
+
+      return res.status(200).json({
+        success: true,
+        count: reviews.length,
+        reviews: reviews,
       });
     } catch (err) {
       return res.status(500).json({ success: false, message: err.message });

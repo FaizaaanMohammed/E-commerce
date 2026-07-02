@@ -9,6 +9,7 @@ import axios from 'axios';
 import SearchIcon from '@mui/icons-material/Search';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import { endpoints } from '../api/endpoints';
 
 export default function Reviews({ mode }) {
   const theme = useTheme();
@@ -21,21 +22,17 @@ export default function Reviews({ mode }) {
   // 📡 1. GET ALL REVIEWS FROM API
   const fetchReviews = async () => {
     try {
-      setLoading(true);
-      // const response = await axios.get('/api/v1/reviews'); // 👈 Apni API URL yahan dalo bhai
-      // setReviews(response.data.reviews);
-
-      // Temporary Premium Fallback Data (Jab tak backend integrate nahi hota)
-      setReviews([
-        { _id: 'REV-001', product: 'Nexus Cyber Sneakers', customer: 'Rahul Bansal', rating: 5, comment: 'Bhai ekdum bawaal quality hai! Comfort next level hai.', date: '29 June 2026', status: 'Pending' },
-        { _id: 'REV-002', product: 'Alpha Mechanical Keyboard', customer: 'Ishita Paul', rating: 4, comment: 'Keys are super clicky and tactile. Light mode is awesome.', date: '28 June 2026', status: 'Approved' },
-        { _id: 'REV-003', product: 'Quantum Liquid Cooler', customer: 'Kabir Malhotra', rating: 2, comment: 'Cooling is fine but installation guide was missing.', date: '25 June 2026', status: 'Rejected' },
-      ]);
-    } catch (err) {
-      console.error("Error fetching reviews from backend:", err);
-    } finally {
-      setLoading(false);
+    setLoading(true);
+    // Ekdum clean call - koi parameter pass karne ki zaroorat nahi hai yahan 👍
+    const response = await endpoints.reviews.getAllAdminReviews(); 
+    if (response.data && response.data.reviews) {
+      setReviews(response.data.reviews);
     }
+  } catch (err) {
+    console.error("Error fetching reviews:", err);
+  } finally {
+    setLoading(false);
+  }
   };
 
   useEffect(() => {
