@@ -29,5 +29,9 @@ export const endpoints = {
   reviews:{
      getAllReveiews:()=> API.get(`/v1/reviews/all-reviews`),
      postReview:()=>API.post('/v1/add-review')
+  },
+  users:{
+    getAllUsers:()=> API.get(`/v1/userList/admin/users`),
+    updateUserStatus:(id,data)=> API.put(`/v1/userList/admin/users/status/${id}`,{status:data})
   }
 };

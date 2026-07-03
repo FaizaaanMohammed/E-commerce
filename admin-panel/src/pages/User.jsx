@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Card, Typography, useTheme, TextField, InputAdornment, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Avatar } from '@mui/material';
+import { Box, Card, Typography, useTheme, TextField, InputAdornment, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Avatar, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import SearchIcon from '@mui/icons-material/Search';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckIcon from '@mui/icons-material/Check';
 import TollIcon from '@mui/icons-material/Toll';
+import { endpoints } from '../api/endpoints';
 
 export default function User({ mode }) {
   const theme = useTheme();
@@ -14,21 +15,40 @@ export default function User({ mode }) {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 📡 1. FETCH ALL USERS WITH WALLET BALANCES
+  // 🔔 TOAST SNACKBAR STATE CONTROL
+  const [toast, setToast] = useState({
+    open: false,
+    message: '',
+    severity: 'success', // 'success' | 'error' | 'info'
+  });
+
+  const showToast = (msg, type = 'success') => {
+    setToast({
+      open: true,
+      message: String(msg),
+      severity: type
+    });
+  };
+
+  const handleCloseToast = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setToast((prev) => ({ ...prev, open: false }));
+  };
+
+  // 📡 1. FETCH ALL USERS
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // const response = await axios.get('/api/v1/admin/users'); 
-      // setUsers(response.data.users);
+      const response = await endpoints.users.getAllUsers();
+      const resData = response?.data ? response.data : response;
 
-      // Temporary Premium Fallback Data
-      setUsers([
-        { _id: 'U001', name: 'Aman Sharma', email: 'aman@example.com', coinBalance: 1200, rupeeBalance: 150.00, status: 'active' },
-        { _id: 'U002', name: 'Zaid Khan', email: 'zaid@example.com', coinBalance: 450, rupeeBalance: 45.00, status: 'active' },
-        { _id: 'U003', name: 'Rohit Verma', email: 'rohit@example.com', coinBalance: 0, rupeeBalance: 0.00, status: 'blocked' },
-      ]);
+      if (resData?.success) {
+        setUsers(resData.users || []);
+      }
     } catch (err) {
       console.error("Error fetching users ledger:", err);
+      const errMsg = err?.response?.data?.message || err?.message || "Users load karne mein dikkat aayi!";
+      showToast(errMsg, 'error');
     } finally {
       setLoading(false);
     }
@@ -38,23 +58,32 @@ export default function User({ mode }) {
     fetchUsers();
   }, []);
 
-  // 📡 2. TOGGLE USER STATUS (BLOCK / UNBLOCK)
+  // 📡 2. TOGGLE USER ACCESS STATUS
   const handleToggleStatus = async (id, currentStatus) => {
     const nextStatus = currentStatus === 'active' ? 'blocked' : 'active';
-    if (window.confirm(`Bhai, pakka user ko ${nextStatus} karna hai?`)) {
-      try {
-        // await axios.put(`/api/v1/admin/users/status/${id}`, { status: nextStatus });
-        setUsers(users.map(user => user._id === id ? { ...user, status: nextStatus } : user)); 
-      } catch (err) {
-        console.error("Failed to change user status:", err);
+    
+    // 🔥 BROWSER PROMPT HATA DIYA: Click karte hi direct process chalega aur clean Snackbar dega!
+    try {
+      const response = await endpoints.users.updateUserStatus(id, nextStatus);
+      const resData = response?.data ? response.data : response;
+
+      if (resData?.success) {
+        setUsers(prevUsers => 
+          prevUsers.map(user => user._id === id ? { ...user, status: nextStatus } : user)
+        );
+        // Asli MUI Snackbar notification yahaan trigger hogi:
+        showToast(`User status successfully updated to ${nextStatus}! ✨`, 'success');
       }
+    } catch (err) {
+      console.error("Failed to change user status:", err);
+      const errMsg = err?.response?.data?.message || err?.message || "Status change failed!";
+      showToast(errMsg, 'error'); // ❌ No browser alert here anymore!
     }
   };
 
-  // Search filter logic
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -112,71 +141,97 @@ export default function User({ mode }) {
               </TableRow>
             </TableHead>
             <TableBody>
-              <AnimatePresence>
-                {filteredUsers.map((user) => (
-                  <TableRow 
-                    key={user._id} 
-                    component={motion.tr}
-                    initial={{ opacity: 0, y: 4 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    sx={{ '& td': { borderBottom: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)'}`, color: theme.palette.text.primary, py: 2 } }}
-                  >
-                    <TableCell>
-                      <Box display="flex" alignItems="center" gap={2}>
-                        <Avatar sx={{ background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)', fontFamily: '"Plus Jakarta Sans"', fontWeight: 700, fontSize: '0.9rem' }}>
-                          {user.name ? user.name[0] : 'U'}
-                        </Avatar>
-                        <Box>
-                          <Typography sx={{ fontFamily: '"Plus Jakarta Sans"', fontWeight: 700, fontSize: '0.95rem' }}>{user.name}</Typography>
-                          <Typography variant="body2" sx={{ fontFamily: '"Plus Jakarta Sans"', color: theme.palette.text.secondary, fontSize: '0.85rem' }}>{user.email}</Typography>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
+                    <CircularProgress size={30} sx={{ color: '#06b6d4' }} />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <AnimatePresence mode="popLayout">
+                  {filteredUsers.map((user) => (
+                    <TableRow 
+                      key={user._id} 
+                      component={motion.tr}
+                      initial={{ opacity: 0, y: 4 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      sx={{ '& td': { borderBottom: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)'}`, color: theme.palette.text.primary, py: 2 } }}
+                    >
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={2}>
+                          <Avatar sx={{ background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)', fontFamily: '"Plus Jakarta Sans"', fontWeight: 700, fontSize: '0.9rem' }}>
+                            {user.name ? user.name[0] : 'U'}
+                          </Avatar>
+                          <Box>
+                            <Typography sx={{ fontFamily: '"Plus Jakarta Sans"', fontWeight: 700, fontSize: '0.95rem' }}>{user.name}</Typography>
+                            <Typography variant="body2" sx={{ fontFamily: '"Plus Jakarta Sans"', color: theme.palette.text.secondary, fontSize: '0.85rem' }}>{user.email}</Typography>
+                          </Box>
                         </Box>
-                      </Box>
-                    </TableCell>
+                      </TableCell>
 
-                    <TableCell sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, color: '#eab308' }}>
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <TollIcon sx={{ fontSize: 18 }} />
-                        {user.coinBalance.toLocaleString('en-IN')} Coins
-                      </Box>
-                    </TableCell>
+                      <TableCell sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, color: '#eab308' }}>
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          <TollIcon sx={{ fontSize: 18 }} />
+                          {(user.coinBalance || 0).toLocaleString('en-IN')} Coins
+                        </Box>
+                      </TableCell>
 
-                    <TableCell sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, fontSize: '1rem' }}>
-                      ₹{user.rupeeBalance.toLocaleString('en-IN')}
-                    </TableCell>
+                      <TableCell sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, fontSize: '1rem' }}>
+                        ₹{(user.rupeeBalance || 0).toLocaleString('en-IN')}
+                      </TableCell>
 
-                    <TableCell>
-                      <Chip 
-                        label={user.status.toUpperCase()}
-                        size="small" 
-                        sx={{ 
-                          bgcolor: user.status === 'active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-                          color: user.status === 'active' ? '#10b981' : '#f43f5e',
-                          fontWeight: 700 
-                        }} 
-                      />
-                    </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={(user.status || 'active').toUpperCase()}
+                          size="small" 
+                          sx={{ 
+                            bgcolor: user.status === 'blocked' ? 'rgba(244, 63, 94, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                            color: user.status === 'blocked' ? '#f43f5e' : '#10b981',
+                            fontWeight: 700 
+                          }} 
+                        />
+                      </TableCell>
 
-                    <TableCell align="right">
-                      <IconButton 
-                        onClick={() => handleToggleStatus(user._id, user.status)}
-                        sx={{ 
-                          color: user.status === 'active' ? '#f43f5e' : '#10b981',
-                          border: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}`, 
-                          borderRadius: '10px', p: 1 
-                        }}
-                      >
-                        {user.status === 'active' ? <BlockIcon sx={{ fontSize: 18 }} /> : <CheckIcon sx={{ fontSize: 18 }} />}
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </AnimatePresence>
+                      <TableCell align="right">
+                        <IconButton 
+                          onClick={() => handleToggleStatus(user._id, user.status)}
+                          sx={{ 
+                            color: user.status === 'blocked' ? '#10b981' : '#f43f5e',
+                            border: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}`, 
+                            borderRadius: '10px', p: 1 
+                          }}
+                        >
+                          {user.status === 'blocked' ? <CheckIcon sx={{ fontSize: 18 }} /> : <BlockIcon sx={{ fontSize: 18 }} />}
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </AnimatePresence>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
       </Card>
+
+      {/* 🚀 REAL MATERIAL-UI TOAST SNACKBAR POPUP */}
+      <Snackbar 
+        open={toast.open} 
+        autoHideDuration={4000} 
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseToast} 
+          severity={toast.severity} 
+          variant="filled"
+          sx={{ width: '100%', fontFamily: '"Plus Jakarta Sans"', fontWeight: 600, borderRadius: '12px' }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
+
     </Box>
   );
 }
