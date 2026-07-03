@@ -173,7 +173,7 @@ export default function User({ mode }) {
 
                       <TableCell sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, color: '#eab308' }}>
                         <Box display="flex" alignItems="center" gap={0.5}>
-                          <TollIcon sx={{ fontSize: 18 }} />
+                          
                           {(user.coinBalance || 0).toLocaleString('en-IN')} Coins
                         </Box>
                       </TableCell>
