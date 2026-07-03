@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema({
    },
    verificationTokenExpires: {
     type: Date
+   },
+   walletBalance: {
+    type: Number,
+    default: 0
    }
 })
 

@@ -9,6 +9,9 @@ class cartController {
       const { productId, quantity = 1 } = req?.body;
       const adminId = req?.admin?.id;
 
+      // 🔥 FIX 1: Explicitly cast to Number to prevent dangerous string-concatenation
+      const parsedQuantity = Number(quantity) || 1;
+
       const product = await Product.findById(productId);
 
       if (!product) {
@@ -23,20 +26,22 @@ class cartController {
       if (!cart) {
         cart = await Cart.create({
           adminId,
-          products: [{ productId, quantity }],
+          products: [{ productId, quantity: parsedQuantity }],
         });
       } else {
         const productIndex = cart.products.findIndex(
           (p) => p.productId.toString() === productId,
         );
+        
         if (productIndex > -1) {
-          cart.products[productIndex].quantity += quantity;
+          // 🔥 FIX 2: Mathematical arithmetic instead of string addition
+          cart.products[productIndex].quantity += parsedQuantity;
         } else {
-          cart.products.push({ productId, quantity });
+          cart.products.push({ productId, quantity: parsedQuantity });
         }
-
-        await cart.save();
       }
+      
+      await cart.save();
 
       return res.status(httpStausCode.OK).json({
         success: true,
@@ -45,6 +50,10 @@ class cartController {
       });
     } catch (err) {
       console.log(err);
+      return res.status(httpStausCode.INTERNAL_SERVER_ERROR || 500).json({
+        success: false,
+        message: err.message,
+      });
     }
   }
 
@@ -73,7 +82,7 @@ class cartController {
       let totalPrice = 0;
       cart.products.forEach((item) => {
         if (item.productId && item.productId.price) {
-          const qty = item.quantity || 1;
+          const qty = Number(item.quantity) || 1; // Safeguard casting
           totalPrice += item.productId.price * qty;
         }
       });
@@ -96,7 +105,6 @@ class cartController {
   }
 
   // remove cart
-
   async removeItemCart(req, res) {
     try {
       const { productId } = req.params;
@@ -105,7 +113,7 @@ class cartController {
       const updatedCart = await Cart.findOneAndUpdate(
         { adminId },
         { $pull: { products: { productId: productId } } },
-        { new: true }, // Taaki response mein updated cart mile
+        { new: true }, 
       ).populate({
         path: "products.productId",
         model: Product,
@@ -127,7 +135,7 @@ class cartController {
       let totalPrice = 0;
       updatedCart.products.forEach((item) => {
         if (item.productId && item.productId.price) {
-          const qty = item.quantity || 1;
+          const qty = Number(item.quantity) || 1; // Safeguard casting
           totalPrice += item.productId.price * qty;
         }
       });

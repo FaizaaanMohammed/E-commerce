@@ -1,92 +1,123 @@
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
+const User = require("../models/User");
+const WalletConfig = require("../models/WalletConfig");
+const Transaction = require("../models/Transaction");
 const httpStatusCode = require("../utils/httpsStatusCode");
 
 class orderController {
   
   // 🛒 1. CREATE NEW ORDER (CHECKOUT FROM CART)
   async createOrder(req, res) {
-  try {
-    const adminId = req?.admin?.id;
-    const { remainingPaymentMethod } = req.body;
+    try {
+      const adminId = req?.admin?.id;
+      const { remainingPaymentMethod } = req.body;
 
-    // 1. User ka active cart find karenge
-    const cart = await Cart.findOne({ adminId });
-    if (!cart || cart.products.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Your Cart is empty ! Please add some Items to cart!",
-      });
-    }
-
-    let totalAmount = 0;
-    const orderItems = [];
-
-    // 2. Loop chala kar har ek product ki quantity aur price fetch karenge
-    for (const item of cart.products) {
-      const product = await Product.findById(item.productId);
-
-      if (!product) {
-        return res.status(404).json({
-          success: false,
-          message: `Product record Not found in Database!`,
-        });
-      }
-
-      // 🚨 NaN SAFE GUARD: Quantity aur Stock ko strictly Number mein convert karenge
-      const itemQuantity = Number(item.quantity) || 1; 
-      const productStock = Number(product.stock) || 0;
-
-      // Inventory check verification
-      if (productStock < itemQuantity) {
+      // 1. User ka active cart find karenge
+      const cart = await Cart.findOne({ adminId });
+      if (!cart || cart.products.length === 0) {
         return res.status(400).json({
           success: false,
-          message: `${product.title} stock is only! Sirf ${productStock} items available.`,
+          message: "Your Cart is empty ! Please add some Items to cart!",
         });
       }
 
-      // Pricing aur Calculations sync
-      const priceAtPurchase = product.price || 0;
-      totalAmount += priceAtPurchase * itemQuantity;
+      let totalAmount = 0;
+      const orderItems = [];
 
-      // Order items array mein push karenge
-      orderItems.push({
-        productId: item.productId,
-        quantity: itemQuantity,
-        priceAtPurchase
+      // 2. Loop chala kar har ek product ki quantity aur price fetch karenge
+      for (const item of cart.products) {
+        const product = await Product.findById(item.productId);
+
+        if (!product) {
+          return res.status(404).json({
+            success: false,
+            message: `Product record Not found in Database!`,
+          });
+        }
+
+        // 🚨 STICKY QUANTITY CHECK: Cart mein se actual quantity ko strictly read karenge
+        const itemQuantity = Number(item.quantity) || 1; 
+        const productStock = Number(product.stock) || 0;
+
+        // Inventory check verification
+        if (productStock < itemQuantity) {
+          return res.status(400).json({
+            success: false,
+            message: `${product.title} stock is only! Sirf ${productStock} items available.`,
+          });
+        }
+
+        // Pricing aur Calculations sync
+        const priceAtPurchase = Number(product.price) || 0;
+        
+        // 🔥 FIX: Total Amount ko price * itemQuantity ke saath add karenge (4999 * 5 = 24995)
+        totalAmount += priceAtPurchase * itemQuantity;
+
+        // Order items array mein push karenge taaki response/DB mein quantity sahi dikhe
+        orderItems.push({
+          productId: item.productId,
+          quantity: itemQuantity,
+          priceAtPurchase
+        });
+
+        // Stock update safely
+        product.stock = productStock - itemQuantity;
+        await product.save();
+      }
+
+      // Dynamic Wallet Configuration Rules fetch karenge
+      let config = await WalletConfig.findOne();
+      if (!config) {
+        config = await WalletConfig.create({ coinToRupeeRate: 100, purchaseRewardMultiplier: 10 });
+      }
+
+      // Calculation Formula: (totalAmount / 100) * multiplier
+      const calculatedCoins = Math.floor((totalAmount / 100) * config.purchaseRewardMultiplier);
+
+      // 3. New Order Create karenge
+      const newOrder = await Order.create({
+        userId: adminId,
+        items: orderItems,
+        totalAmount,
+        walletPaymentAmount: 0,
+        remainingPaymentMethod: remainingPaymentMethod || "COD",
+        orderStatus: "Delivered", // Aapka preset default
+        coinsEarnedFromOrder: calculatedCoins
       });
 
-      // 🚨 Stock update safely (bina NaN ke risk ke)
-      product.stock = productStock - itemQuantity;
-      await product.save();
+      // 4. Cart khali kar denge
+      cart.products = [];
+      await cart.save();
+
+      // Since orderStatus is initialized directly as "Delivered", we credit coins immediately
+      if (newOrder.orderStatus === "Delivered" && calculatedCoins > 0) {
+        const user = await User.findById(adminId);
+        if (user) {
+          user.walletBalance = (user.walletBalance || 0) + calculatedCoins;
+          await user.save();
+
+          await Transaction.create({
+            userId: adminId,
+            amount: calculatedCoins,
+            type: 'credit',
+            source: 'purchase_reward',
+            description: `Earned rewards for order reference ID: ${newOrder._id}`
+          });
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Order successfully placed 🛒",
+        data: newOrder,
+      });
+
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
     }
-
-    // 3. New Order Create karenge
-    const newOrder = await Order.create({
-      userId: adminId,
-      items: orderItems,
-      totalAmount,
-      walletPaymentAmount: 0,
-      remainingPaymentMethod: remainingPaymentMethod || "COD",
-      orderStatus: "Delivered",
-      coinsEarnedFromOrder: Math.floor(totalAmount * 0.01)
-    });
-
-    // 4. Cart khali kar denge
-    cart.products = [];
-    await cart.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Order successfully placed 🛒",
-      data: newOrder,
-    });
-
-  } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
   }
-}
 
   // 📦 2. GET USER ORDERS (CUSTOMER HISTORY)
   async getUserOrders(req, res) {
@@ -96,7 +127,7 @@ class orderController {
         .populate("items.productId", "title images")
         .sort({ createdAt: -1 });
 
-      return res.status(httpStatusCode.OK).json({
+      return res.status(httpStatusCode.OK || 200).json({
         success: true,
         count: orders.length,
         data: orders,
@@ -114,7 +145,7 @@ class orderController {
         .populate("items.productId", "title price")
         .sort({ createdAt: -1 });
 
-      return res.status(httpStatusCode.OK).json({
+      return res.status(httpStatusCode.OK || 200).json({
         success: true,
         count: orders.length,
         data: orders,
@@ -123,55 +154,68 @@ class orderController {
       return res.status(500).json({ success: false, message: err.message });
     }
   }
+
   // 🔄 4. UPDATE ORDER STATUS (ADMIN ACTION DROPDOWN)
-async updateOrderStatus(req, res) {
-  try {
-    const { orderId } = req.params; // URL se order ID nikalenge
-    const { status } = req.body;    // Frontend dropdown se badla hua status aayega ('Shipped', 'Delivered', etc.)
+  async updateOrderStatus(req, res) {
+    try {
+      const { orderId } = req.params; 
+      const { status } = req.body;    
 
-    console.log("🔥 BACKEND HIT HUA! Order ID:", orderId, "Naya Status:", status);
+      console.log("🔥 BACKEND HIT HUA! Order ID:", orderId, "Naya Status:", status);
 
-    // Validation check: Status khali nahi hona chahiye
-    if (!status) {
-      return res.status(400).json({
-        success: false,
-        message: "Status value sending will mandatory!",
+      if (!status) {
+        return res.status(400).json({
+          success: false,
+          message: "Status value sending will mandatory!",
+        });
+      }
+
+      // Fetch before check to avoid duplicate reward distributions
+      const orderCheck = await Order.findById(orderId);
+      if (!orderCheck) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not Found in DataBase!",
+        });
+      }
+
+      const updatedOrder = await Order.findByIdAndUpdate(
+        orderId,
+        { orderStatus: status }, 
+        { new: true } 
+      );
+
+      // If status changes to Delivered, and it wasn't already marked delivered
+      if (status === "Delivered" && orderCheck.orderStatus !== "Delivered") {
+        console.log(`Order ${orderId} delivered. User gets ${updatedOrder.coinsEarnedFromOrder} coins reward!`);
+        
+        if (updatedOrder.coinsEarnedFromOrder > 0) {
+          const user = await User.findById(updatedOrder.userId);
+          if (user) {
+            user.walletBalance = (user.walletBalance || 0) + updatedOrder.coinsEarnedFromOrder;
+            await user.save();
+
+            await Transaction.create({
+              userId: user._id,
+              amount: updatedOrder.coinsEarnedFromOrder,
+              type: 'credit',
+              source: 'purchase_reward',
+              description: `Earned rewards for order reference ID: ${updatedOrder._id}`
+            });
+          }
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Order status successfully Changed '${status}'!`,
+        data: updatedOrder,
       });
+
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
     }
-
-    // Database mein order ka status dhoondh kar update karenge[cite: 1]
-    const updatedOrder = await Order.findByIdAndUpdate(
-      orderId,
-      { orderStatus: status }, // Schema ke orderStatus field mein save hoga[cite: 1]
-      { new: true } // Taaki hume updated data response mein mile
-    );
-
-    if (!updatedOrder) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not Found in DataBase!",
-      });
-    }
-
-    // 🪙 GAMIFIED WALLET SYSTEM RULE[cite: 1]: 
-   
-    if (status === "Delivered") {
-      console.log(`Order ${orderId} delivered . User get ${updatedOrder.coinsEarnedFromOrder} coins reward !`);
-      
-      // TODO: Jab wallet module connect karenge, toh yahan User.findByIdAndUpdate chala kar 
-      // user ke coinBalance mein 'updatedOrder.coinsEarnedFromOrder' plus kar denge[cite: 1].
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: `Order status successfully Changed '${status}'!`,
-      data: updatedOrder,
-    });
-
-  } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
   }
-}
 }
 
 module.exports = new orderController();

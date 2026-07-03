@@ -177,7 +177,8 @@ class UserController {
           id: extinguisher._id,
           name: extinguisher.name,
           email: extinguisher.email,
-          role: extinguisher.role
+          role: extinguisher.role,
+          coins:extinguisher.walletBalance
         },
         token: token
       });
