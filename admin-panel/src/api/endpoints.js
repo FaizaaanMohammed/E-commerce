@@ -10,10 +10,10 @@ export const endpoints = {
 
   // 🪙 Wallet Operations
   wallet: {
-    getSettings: () => API.get('/v1/admin/system-config'),
-    updateSettings: (data) => API.put('/v1/admin/system-config', data),
-    triggerAirdrop: (data) => API.post('/v1/admin/wallet/airdrop', data),
-  },
+  getSettings: () => API.get('/v1/wallet/get-config'),
+  updateSettings: (data) => API.put('/v1/wallet/update-config', data),
+  triggerAirdrop: (data) => API.post('/v1/wallet/trigger-airdrop', data),
+},
 
   // 📦 Core E-commerce Entities
   products: {
