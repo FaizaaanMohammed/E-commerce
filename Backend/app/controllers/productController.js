@@ -8,7 +8,7 @@ const cloudinary = require("cloudinary").v2;
 console.log("Cloudinary API Key:", process.env.CLOUDINARY_API_KEY);
 
 class ProductController {
-  // ==================== CREATE PRODUCT ====================
+ 
   // ==================== CREATE PRODUCT ====================
 async createProduct(req, res) {
   try {

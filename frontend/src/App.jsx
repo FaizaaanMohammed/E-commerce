@@ -1,14 +1,39 @@
-import { useState } from 'react'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
+import { Box } from '@mui/material';
+import TopNavbar from './components/TopNavbar';
+import Home from './pages/Home';
+import Shop from './pages/Shop';
+import Footer from './components/Footer';
 
+// Layout component that adds the Top Navbar to all standard pages
+const StandardLayout = () => {
+  return (
+    <Box sx={{ bgcolor: '#f8f6f3', minHeight: '100vh' }}>
+      <TopNavbar />
+      <Box component="main">
+        <Outlet /> {/* This renders the active sub-page (e.g., Shop) */}
+      </Box>
+      <Footer/>
+    </Box>
+  );
+};
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <h1>E-commerce site is running</h1>
-    </>
-  )
+    <Router>
+      <Routes>
+        {/* 1. HOME ROUTE: Completely isolated with its own Left Sidebar */}
+        <Route path="/" element={<Home />} />
+
+        {/* 2. ALL OTHER ROUTES: Bundled under the Top Navbar layout */}
+        <Route element={<StandardLayout />}>
+          <Route path="/shop" element={<Shop />} />
+          {/* Add more pages here later, like /cart or /product/:id */}
+        </Route>
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
