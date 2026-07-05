@@ -357,7 +357,7 @@ const Shop = () => {
 
       </Box>
 
-      <Footer />
+      
 
       <QuickViewModal 
         open={quickViewOpen} 
