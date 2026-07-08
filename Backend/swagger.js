@@ -8,11 +8,11 @@ const doc = {
   // Host aur schemes ki jagah servers array ka use karein
   servers: [
     {
-      url: "http://localhost:5000",
+      url: "http://localhost:5000/api/v1",
       description: "Local Development Server",
     },
     {
-      url: "https://e-commerce-g7tv.onrender.com",
+      url: "https://e-commerce-g7tv.onrender.com/api/v1",
       description: "Live Render Production Server",
     },
   ],
