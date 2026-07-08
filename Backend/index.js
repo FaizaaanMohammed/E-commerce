@@ -29,7 +29,8 @@ const allowedOrigins = [
   "https://e-commerce-lemon-nine-65.vercel.app", 
   "https://e-commerce-djzo.vercel.app",    
   "http://localhost:5173",                       
-  "http://localhost:3000"                       
+  "http://localhost:3000"  ,
+  "https://e-commerce-g7tv.onrender.com"                     
 ];
 
 
