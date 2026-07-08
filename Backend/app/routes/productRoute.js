@@ -5,11 +5,24 @@ const Authcheck = require('../middlewares/AuthCheck');
 const upload = require('../utils/fileUpload');
 const router = express.Router();
 
+router.post('/create-product', Authcheck, AdminAuthcheck, upload.array('images', 5), (req, res, next) => {
+    // #swagger.tags = ['Products']
+    productController.createProduct(req, res, next);
+});
 
-router.post('/create-product',Authcheck,AdminAuthcheck,upload.array('images', 5),productController.createProduct)
-router.get('/All-product',productController.getProduct)
-router.put('/update-product/:id',Authcheck,AdminAuthcheck,upload.array('images', 5),productController.updateProduct)
-router.delete('/delete-product/:id',Authcheck,AdminAuthcheck,productController.deleteProduct)
+router.get('/All-product', (req, res, next) => {
+    // #swagger.tags = ['Products']
+    productController.getProduct(req, res, next);
+});
 
+router.put('/update-product/:id', Authcheck, AdminAuthcheck, upload.array('images', 5), (req, res, next) => {
+    // #swagger.tags = ['Products']
+    productController.updateProduct(req, res, next);
+});
 
-module.exports = router
+router.delete('/delete-product/:id', Authcheck, AdminAuthcheck, (req, res, next) => {
+    // #swagger.tags = ['Products']
+    productController.deleteProduct(req, res, next);
+});
+
+module.exports = router;

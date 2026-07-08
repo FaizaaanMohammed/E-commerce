@@ -5,7 +5,14 @@ const AdminAuthcheck = require('../middlewares/AdminAuthCheck');
 const Authcheck = require('../middlewares/AuthCheck');
 
 // Secure Admin Management Gateways
-router.get("/admin/users", Authcheck, AdminAuthcheck, userController.getAllUsersForAdmin);
-router.put("/admin/users/status/:id", Authcheck, AdminAuthcheck, userController.toggleUserStatus);
+router.get("/admin/users", Authcheck, AdminAuthcheck, (req, res, next) => {
+    // #swagger.tags = ['User List']
+    userController.getAllUsersForAdmin(req, res, next);
+});
+
+router.put("/admin/users/status/:id", Authcheck, AdminAuthcheck, (req, res, next) => {
+    // #swagger.tags = ['User List']
+    userController.toggleUserStatus(req, res, next);
+});
 
 module.exports = router;

@@ -2,10 +2,19 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/authController')
 
+router.post('/register', (req, res, next) => {
+    // #swagger.tags = ['Authentication']
+    userController.userRegister(req, res, next);
+});
 
-router.post('/register',userController.userRegister)
-router.get("/verify-email", userController.verifyEmail);
-router.post('/login',userController.userLogin)
+router.get("/verify-email", (req, res, next) => {
+    // #swagger.tags = ['Authentication']
+    userController.verifyEmail(req, res, next);
+});
 
+router.post('/login', (req, res, next) => {
+    // #swagger.tags = ['Authentication']
+    userController.userLogin(req, res, next);
+});
 
-module.exports = router
+module.exports = router;
