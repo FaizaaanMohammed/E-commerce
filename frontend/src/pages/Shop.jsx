@@ -28,7 +28,7 @@ const Shop = () => {
   const isMobileOrTablet = useMediaQuery(theme.breakpoints.down("lg"));
 
   // State Management
-  const [priceRange, setPriceRange] = useState([10, 100000]);
+  const [priceRange, setPriceRange] = useState([10, 1000000]);
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -38,9 +38,8 @@ const Shop = () => {
   const [masterCategories, setMasterCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // Pagination States
+  // Frontend Pagination States
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const ITEMS_PER_PAGE = 6;
 
   // Phase 1: Fetch unique categories across the total collection on initialization
@@ -63,14 +62,12 @@ const Shop = () => {
     }
   };
 
-  // Phase 2: Fetch products using current operational state parameters + Pagination parameters
+  // Phase 2: Fetch products using current operational state filter parameters
   const fetchFilteredProducts = async () => {
     try {
       const params = {
         minPrice: priceRange[0],
-        maxPrice: priceRange[1],
-        page: page,
-        limit: ITEMS_PER_PAGE
+        maxPrice: priceRange[1]
       };
       
       if (selectedCategory) {
@@ -78,13 +75,7 @@ const Shop = () => {
       }
 
       const res = await api.get(endpoints.product.getAllProduct, { params });
-      
-      // Update items array
       setFilteredProducts(res?.data?.data || []);
-      
-      // Calculate total page count dynamically from backend metrics if provided, else fall back to total length math
-      const serverTotal = res?.data?.totalCount || res?.data?.length || 0;
-      setTotalPages(Math.ceil(serverTotal / ITEMS_PER_PAGE) || 1);
     } catch (err) {
       console.error("Error fetching filtered product data matrix:", err);
     }
@@ -95,10 +86,10 @@ const Shop = () => {
     fetchMasterCategories();
   }, []);
 
-  // Sync displayed catalog view whenever specific filters or current page shifts
+  // Sync displayed catalog view whenever specific filters shift
   useEffect(() => {
     fetchFilteredProducts();
-  }, [selectedCategory, priceRange, page]);
+  }, [selectedCategory, priceRange]);
 
   // Reset current page position back to 1 if filter selection adjustments take place
   useEffect(() => {
@@ -108,8 +99,16 @@ const Shop = () => {
   // Pagination Change Handler
   const handlePageChange = (event, value) => {
     setPage(value);
-    window.scrollTo({ top: 0, behavior: "smooth" }); // Smooth scroll back to top on page change
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Compute total pages dynamically on the frontend
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE) || 1;
+
+  // Slice the filtered dataset to display only the current page items
+  const indexOfLastItem = page * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentDisplayedProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
 
   // Sidebar Filter Component Markup
   const renderSidebarFilters = () => {
@@ -313,14 +312,14 @@ const Shop = () => {
         {/* Product Catalog Core Presentation Grid */}
         <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
           <Grid container spacing={4} sx={{ width: "100%", flexGrow: 1 }}>
-            {filteredProducts.length === 0 ? (
+            {currentDisplayedProducts.length === 0 ? (
               <Box sx={{ width: "100%", py: 10, textAlign: "center", mx: "auto" }}>
                 <Typography sx={{ fontFamily: "Montserrat", color: "#666" }}>
                   No products found matching the criteria.
                 </Typography>
               </Box>
             ) : (
-              filteredProducts.map((product) => (
+              currentDisplayedProducts.map((product) => (
                 <Grid item xs={12} sm={6} md={4} size={{ xs: 12, sm: 6, md: 4 }} key={product._id}>
                   <Box
                     onMouseEnter={() => setHoveredProduct(product._id)}
@@ -435,7 +434,7 @@ const Shop = () => {
 
           {/* Elegant Center-Aligned Pagination Bar Component */}
           {filteredProducts.length > 0 && (
-            <Stack direction="row" justifyContent="center" sx={{ mt: 6, mb: 2 }}>
+            <Stack direction="column" justifyContent="center" alignItems="center" sx={{ mt: 6, mb: 2 }}>
               <Pagination
                 count={totalPages}
                 page={page}
