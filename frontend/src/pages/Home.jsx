@@ -1,18 +1,19 @@
-// src/pages/Home.jsx
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Stack, Link, InputBase, useMediaQuery, useTheme, Drawer, IconButton, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Box, Typography, Button, Stack, Link, InputBase, useMediaQuery, useTheme, Drawer, IconButton, List, ListItem, ListItemButton, ListItemText, Avatar } from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import PermIdentityIcon from '@mui/icons-material/PermIdentity';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'; 
 import CloseIcon from '@mui/icons-material/Close';
 import girlImage from '../assets/Banner-girl.webp';
-import AuthModal from '../components/AuthModal'; // Importing your isolated modal cleaner layout
+import AuthModal from '../components/AuthModal';
 
 const Home = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -24,6 +25,19 @@ const Home = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
 
+  // अवतार दिखाने के लिए स्टेट्स जोड़े
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userInitial, setUserInitial] = useState("");
+
+  const menuItems = [
+    { name: "Home", path: "/" },
+    { name: "Shop", path: "/shop" },
+    { name: "Collections", path: "/collections" },
+    { name: "New Arrivals", path: "/new-arrivals" },
+    { name: "Sale", path: "/sale", isSale: true },
+  ];
+
+  // 1. डेटा लोड करने का इफेक्ट
   useEffect(() => {
     const loadStoreBannerData = async () => {
       setLoading(true);
@@ -43,13 +57,57 @@ const Home = () => {
     loadStoreBannerData();
   }, []);
 
+  // 2. अवतार और टोकन वैलिडेशन का इफेक्ट (फिक्स किया)
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("nexus_user");
+
+    if (token) {
+      setIsAuthenticated(true);
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          const name = parsedUser?.name || parsedUser?.user?.name;
+          if (name) {
+            setUserInitial(name.charAt(0).toUpperCase());
+          } else {
+            setUserInitial("N");
+          }
+        } catch (e) {
+          setUserInitial("N"); 
+        }
+      } else {
+        setUserInitial("N");
+      }
+    } else {
+      setIsAuthenticated(false);
+      setUserInitial("");
+    }
+  }, [location, authOpen]);
+
+  const handleProtectedRoute = (targetPath) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setAuthOpen(true); 
+    } else {
+      navigate(targetPath); 
+    }
+  };
+
+  const handleIdentityClick = () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/profile"); 
+    } else {
+      setAuthOpen(true);
+    }
+  };
+
   const activeProduct = products[currentIndex];
 
   if (loading || !activeProduct) {
     return <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8f6f3' }} />;
   }
-
-  const menuItems = ['Home', 'Shop', 'Collections', 'Pages', 'Blog', 'New Look'];
 
   return (
     <Box 
@@ -64,39 +122,42 @@ const Home = () => {
         boxSizing: 'border-box'
       }}
     >
-      {/* PREMIUM FLOATING BACKGROUND PARTICLES */}
+      {/* PREMIUM FLOATING BACKGROUND PARTICLES & BLUR */}
       <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         <Box
           component={motion.div}
-          animate={{ scale: [1, 1.05, 1], x: [0, 15, 0], y: [0, -10, 0] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ scale: [1, 1.05, 1], x: [0, -10, 0], y: [0, 10, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           sx={{
             position: 'absolute',
-            top: '-10%',
-            right: '10%',
-            width: '600px',
-            height: '600px',
+            bottom: '-15%',
+            right: '-10%',
+            width: '650px',
+            height: '650px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(242,230,216,0.35) 0%, rgba(248,246,243,0) 70%)',
+            background: 'radial-gradient(circle, rgba(238,223,204,0.4) 0%, rgba(248,246,243,0) 80%)',
+            filter: 'blur(30px)'
           }}
         />
+
         {[...Array(8)].map((_, i) => {
-          const randomX = [Math.random() * 200, Math.random() * -100, Math.random() * 300];
-          const randomY = [Math.random() * 200, Math.random() * -100, Math.random() * 300];
+          const randomX = [Math.random() * 150, Math.random() * -80, Math.random() * 200];
+          const randomY = [Math.random() * 150, Math.random() * -80, Math.random() * 200];
           return (
             <Box
               key={i}
               component={motion.div}
-              animate={{ x: randomX, y: randomY, opacity: [0.15, 0.4, 0.15], scale: [0.8, 1.2, 0.8] }}
-              transition={{ duration: 12 + i * 3, repeat: Infinity, ease: "easeInOut" }}
+              animate={{ x: randomX, y: randomY, opacity: [0.2, 0.6, 0.2], scale: [0.9, 1.3, 0.9] }}
+              transition={{ duration: 10 + i * 3, repeat: Infinity, ease: "easeInOut" }}
               sx={{
                 position: 'absolute',
                 top: `${15 + (i * 10)}%`,
                 left: `${35 + (i * 7)}%`,
                 width: i % 2 === 0 ? '6px' : '4px',
                 height: i % 2 === 0 ? '6px' : '4px',
-                bgcolor: i % 3 === 0 ? '#a30d0d' : '#e3edf6',
+                bgcolor: i % 3 === 0 ? '#a30d0d' : '#cda587', 
                 borderRadius: '50%',
+                boxShadow: '0 0 8px rgba(0,0,0,0.05)'
               }}
             />
           );
@@ -112,10 +173,20 @@ const Home = () => {
             </IconButton>
             <Typography variant="h4" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 900, fontSize: '24px', color: '#111' }}>NEXUS OS.</Typography>
           </Stack>
-          <Stack direction="row" spacing={2.5}>
-            <PermIdentityIcon onClick={() => setAuthOpen(true)} sx={{ cursor: 'pointer', color: '#111', fontSize: '22px' }} />
+          <Stack direction="row" spacing={2} alignItems="center">
+            {/* मोबाइल अवतार फिक्स */}
+            <IconButton onClick={handleIdentityClick} sx={{ p: 0 }}>
+              {isAuthenticated ? (
+                <Avatar sx={{ width: 24, height: 24, bgcolor: "#1A1A1A", color: "white", fontSize: '11px', fontWeight: 600, fontFamily: "Montserrat" }}>
+                  {userInitial}
+                </Avatar>
+              ) : (
+                <PermIdentityIcon sx={{ color: '#111', fontSize: '22px' }} />
+              )}
+            </IconButton>
             <SearchIcon sx={{ cursor: 'pointer', color: '#111', fontSize: '22px' }} />
-            <ShoppingBagIcon sx={{ cursor: 'pointer', color: '#111', fontSize: '22px' }} />
+            <FavoriteBorderIcon onClick={() => handleProtectedRoute("/wishlist")} sx={{ cursor: 'pointer', color: '#111', fontSize: '22px' }} />
+            <ShoppingBagIcon onClick={() => handleProtectedRoute("/cart")} sx={{ cursor: 'pointer', color: '#111', fontSize: '22px' }} />
           </Stack>
         </Box>
       )}
@@ -135,24 +206,31 @@ const Home = () => {
             </IconButton>
           </Box>
           <List>
-            {menuItems.map((text, idx) => (
-              <ListItem disablePadding key={text} sx={{ mb: 1 }}>
-                <ListItemButton 
-                  onClick={() => { setDrawerOpen(false); if(text === 'Shop') navigate('/shop'); }} 
-                  sx={{ px: 0, '&:hover': { bgcolor: 'transparent' } }}
-                >
-                  <ListItemText 
-                    primary={text} 
-                    primaryTypographyProps={{ 
-                      fontFamily: '"Montserrat", sans-serif', 
-                      fontWeight: idx === 0 || text === 'Shop' ? 600 : 500,
-                      fontSize: '16px',
-                      color: idx === 0 ? '#cda587' : '#111'
-                    }} 
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
+            {menuItems.map((item, idx) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <ListItem disablePadding key={item.name} sx={{ mb: 1 }}>
+                  <ListItemButton 
+                    onClick={() => { setDrawerOpen(false); navigate(item.path); }} 
+                    sx={{ px: 0, '&:hover': { bgcolor: 'transparent' } }}
+                  >
+                    <ListItemText 
+                      primary={item.name} 
+                      primaryTypographyProps={{ 
+                        fontFamily: '"Montserrat", sans-serif', 
+                        fontWeight: isActive || item.name === 'Shop' ? 600 : 500,
+                        fontSize: '16px',
+                        color: isActive 
+                          ? '#cda587' 
+                          : item.isSale 
+                            ? '#b33939' 
+                            : '#111'
+                      }} 
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
           </List>
         </Box>
       </Drawer>
@@ -183,17 +261,33 @@ const Home = () => {
               </IconButton>
             </Stack>
 
-            <Stack spacing={2.5} sx={{ mt: '80px' }}>
-              <Link underline="none" onClick={() => navigate('/')} sx={{ color: '#cda587', fontWeight: 600, fontSize: '1.1rem', cursor: 'pointer', fontFamily: '"Montserrat", sans-serif', letterSpacing: '0.2px' }}>Home</Link>
-              <Box sx={{ position: 'relative', width: 'fit-content' }}>
-                <Link underline="none" onClick={() => navigate('/shop')} sx={{ color: '#111111', fontSize: '1.1rem', cursor: 'pointer', fontFamily: '"Montserrat", sans-serif', letterSpacing: '0.1px', fontWeight: 600, '&:hover': { color: '#cda587' } }}>Shop</Link>
-                <Box sx={{ position: 'absolute', top: '-10px', right: '-28px', bgcolor: '#ea1010', color: 'white', fontSize: '9px', fontWeight: 700, px: '6px', py: '2px', borderRadius: '2px' }}>HOT</Box>
-              </Box>
-              {['Collections', 'Pages', 'Blog', 'New Look'].map((text) => (
-                <Link key={text} underline="none" sx={{ color: '#111111', fontSize: '1.1rem', cursor: 'pointer', fontFamily: '"Montserrat", sans-serif', letterSpacing: '0.2px', fontWeight: "600", padding: "4px 0px", '&:hover': { color: '#cda587' } }}>
-                  {text}
-                </Link>
-              ))}
+            <Stack spacing={3.5} sx={{ mt: '80px' }}>
+              {menuItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Box key={item.name} sx={{ position: 'relative', width: 'fit-content' }}>
+                    <Link 
+                      underline="none" 
+                      onClick={() => navigate(item.path)} 
+                      sx={{ 
+                        color: isActive ? '#cda587' : item.isSale ? '#b33939' : '#111111', 
+                        fontSize: '1.1rem', 
+                        cursor: 'pointer', 
+                        fontFamily: '"Montserrat", sans-serif', 
+                        letterSpacing: '0.2px', 
+                        fontWeight: "600", 
+                        padding: "4px 0px", 
+                        '&:hover': { color: '#cda587' } 
+                      }}
+                    >
+                      {item.name}
+                    </Link>
+                    {item.name === 'Shop' && (
+                      <Box sx={{ position: 'absolute', top: '-10px', right: '-28px', bgcolor: '#ea1010', color: 'white', fontSize: '9px', fontWeight: 700, px: '6px', py: '2px', borderRadius: '2px' }}>HOT</Box>
+                    )}
+                  </Box>
+                );
+              })}
             </Stack>
           </Box>
 
@@ -231,9 +325,33 @@ const Home = () => {
       >
         {!isMobile && (
           <Stack direction="row" spacing={3} alignItems="center" sx={{ position: 'absolute', top: '50px', right: '80px', zIndex: 10 }}>
-            <PermIdentityIcon onClick={() => setAuthOpen(true)} sx={{ cursor: 'pointer', color: '#111', fontSize: '22px' }} />
+            {/* डेस्कटॉप अवतार फिक्स */}
+            <IconButton onClick={handleIdentityClick} sx={{ p: 0 }}>
+              {isAuthenticated ? (
+                <Avatar 
+                  sx={{ 
+                    width: 28, 
+                    height: 28, 
+                    bgcolor: "#1A1A1A", 
+                    color: "white", 
+                    fontSize: "13px", 
+                    fontWeight: 600,
+                    fontFamily: "Montserrat",
+                    cursor: "pointer"
+                  }}
+                >
+                  {userInitial}
+                </Avatar>
+              ) : (
+                <PermIdentityIcon sx={{ color: '#111', fontSize: '22px', cursor: 'pointer' }} />
+              )}
+            </IconButton>
+            
             <SearchIcon sx={{ cursor: 'pointer', color: '#111', fontSize: '22px' }} />
-            <Box sx={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            
+            <FavoriteBorderIcon onClick={() => handleProtectedRoute("/wishlist")} sx={{ cursor: 'pointer', color: '#111', fontSize: '22px' }} />
+            
+            <Box onClick={() => handleProtectedRoute("/cart")} sx={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
               <ShoppingBagIcon sx={{ color: '#111', fontSize: '22px' }} />
               <Box sx={{ position: 'absolute', top: -6, right: -8, bgcolor: '#111', color: '#fff', borderRadius: '50%', width: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 'bold' }}>
                 2
@@ -385,10 +503,8 @@ const Home = () => {
             </Stack>
           ))}
         </Stack>
-
       </Box>
 
-      {/* RENDER AUTH MODAL PORTAL */}
       <AuthModal open={authOpen} handleClose={() => setAuthOpen(false)} />
     </Box>
   );
