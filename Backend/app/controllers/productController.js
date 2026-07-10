@@ -2,104 +2,113 @@ const Product = require("../models/Product");
 const httpStatusCode = require("../utils/httpsStatusCode"); // 1. Spelling standard rakh di hai
 const cloudinary = require("cloudinary").v2;
 
-
-
-
 console.log("Cloudinary API Key:", process.env.CLOUDINARY_API_KEY);
 
 class ProductController {
- 
   // ==================== CREATE PRODUCT ====================
-async createProduct(req, res) {
-  try {
-    // 1. Cloudinary config apply karein
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-    });
+  async createProduct(req, res) {
+    try {
+      // 1. Cloudinary config apply karein
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+      });
 
-    let requestData = {};
+      let requestData = {};
 
-    // 2. Bulletproof Parsing: Check karein data wrapper string hai ya direct fields hain
-    if (req.body.data && typeof req.body.data === "string") {
-      requestData = JSON.parse(req.body.data);
-    } else {
-      // Agar direct payload aa raha ho (Jaise aapke frontend screenshot mein hai)
-      requestData = req.body;
-    }
-
-    // 3. Variables destructure karein safely
-    const { title, description, price, category, stock, coinRewardEligible } = requestData;
-
-    // --- Baki ka aapka upload aur creation logic bilkul same rahega ---
-    let imageUrls = [];
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const result = await cloudinary.uploader.upload(file.path, {
-          folder: "product_images",
-        });
-        imageUrls.push(result.secure_url);
+      // 2. Bulletproof Parsing: Check karein data wrapper string hai ya direct fields hain
+      if (req.body.data && typeof req.body.data === "string") {
+        requestData = JSON.parse(req.body.data);
+      } else {
+        // Agar direct payload aa raha ho (Jaise aapke frontend screenshot mein hai)
+        requestData = req.body;
       }
-    } else if (requestData.images && Array.isArray(requestData.images)) {
-      imageUrls = requestData.images;
+
+      // 3. Variables destructure karein safely
+      const { title, description, price, category, stock, coinRewardEligible } =
+        requestData;
+
+      // --- Baki ka aapka upload aur creation logic bilkul same rahega ---
+      let imageUrls = [];
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: "product_images",
+          });
+          imageUrls.push(result.secure_url);
+        }
+      } else if (requestData.images && Array.isArray(requestData.images)) {
+        imageUrls = requestData.images;
+      }
+
+      const newProduct = await Product.create({
+        title,
+        description,
+        price,
+        category,
+        stock,
+        images: imageUrls,
+        coinRewardEligible,
+      });
+
+      return res.status(httpStatusCode.CREATED).json({
+        success: true,
+        message: "Product has been created",
+        data: newProduct,
+      });
+    } catch (err) {
+      console.error("Actual Backend Error Structure:", err); // Yeh line real issue debug karne mein help karegi
+      return res.status(httpStatusCode.BAD_REQUEST).json({
+        success: false,
+        message: err.message,
+      });
     }
-
-    const newProduct = await Product.create({
-      title,
-      description,
-      price,
-      category,
-      stock,
-      images: imageUrls,
-      coinRewardEligible,
-    });
-
-    return res.status(httpStatusCode.CREATED).json({
-      success: true,
-      message: "Product has been created",
-      data: newProduct,
-    });
-
-  } catch (err) {
-    console.error("Actual Backend Error Structure:", err); // Yeh line real issue debug karne mein help karegi
-    return res.status(httpStatusCode.BAD_REQUEST).json({
-      success: false,
-      message: err.message,
-    });
   }
-}
 
   // ==================== GET ALL PRODUCTS ====================
   async getProduct(req, res) {
     try {
-      
-      const {category,minPrice , maxPrice} = req?.query
+      // 1. Extract query and pagination parameters from req.query
+      const { category, minPrice, maxPrice, page, limit } = req.query;
 
-      let query={};
+      // 2. Define pagination defaults
+      const currentPage = Number(page) || 1;
+      const itemsPerPage = Number(limit) || 6;
 
-      if(category){
-         query.category = category;
+      // Calculate how many documents to skip
+      const skipValue = (currentPage - 1) * itemsPerPage;
+
+      // 3. Initialize the filter query object
+      let query = {};
+
+      if (category) {
+        // Using a case-insensitive exact regex match
+        query.category = { $regex: new RegExp(`^${category}$`, "i") };
       }
 
       if (minPrice || maxPrice) {
-      query.price = {};
-      
-      if (minPrice) {
-        query.price.$gte = Number(minPrice); // Greater than or equal to minPrice
+        query.price = {};
+        if (minPrice && !isNaN(minPrice)) query.price.$gte = Number(minPrice);
+        if (maxPrice && !isNaN(maxPrice)) query.price.$lte = Number(maxPrice);
       }
-      
-      if (maxPrice) {
-        query.price.$lte = Number(maxPrice); // Less than or equal to maxPrice
-      }
-    }
 
+      // 4. Get the total count of documents that match this filter criteria
+      // This is required by the frontend to compute the total pages correctly
+      const totalCount = await Product.countDocuments(query);
 
-      const products = await Product.find(query);
+      // 5. Fetch the specific slice of data using skip() and limit()
+      const products = await Product.find(query)
+        .skip(skipValue)
+        .limit(itemsPerPage);
+
+      // 6. Return response with structural pagination metadata
       return res.status(httpStatusCode.OK).json({
         success: true,
-        message: "All Products Fetched Successfully",
-        length: products.length,
+        message: "Products Fetched Successfully",
+        totalCount: totalCount, // Total records matching filters in DB
+        length: products.length, // Current records returned in this page slice
+        currentPage: currentPage,
         data: products,
       });
     } catch (err) {
