@@ -73,7 +73,29 @@ async createProduct(req, res) {
   // ==================== GET ALL PRODUCTS ====================
   async getProduct(req, res) {
     try {
-      const products = await Product.find();
+      
+      const {category,minPrice , maxPrice} = req?.query
+
+      let query={};
+
+      if(category){
+         query.category = category;
+      }
+
+      if (minPrice || maxPrice) {
+      query.price = {};
+      
+      if (minPrice) {
+        query.price.$gte = Number(minPrice); // Greater than or equal to minPrice
+      }
+      
+      if (maxPrice) {
+        query.price.$lte = Number(maxPrice); // Less than or equal to maxPrice
+      }
+    }
+
+
+      const products = await Product.find(query);
       return res.status(httpStatusCode.OK).json({
         success: true,
         message: "All Products Fetched Successfully",

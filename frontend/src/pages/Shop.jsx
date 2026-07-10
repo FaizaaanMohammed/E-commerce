@@ -1,5 +1,5 @@
 // src/pages/Shop.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Stack, Link, Slider, Rating, IconButton, Button, Drawer, useMediaQuery, useTheme } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
@@ -11,6 +11,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import TopNavbar from '../components/TopNavbar';
 import Footer from '../components/Footer';
 import QuickViewModal from '../components/QuickViewModal';
+import api from '../Auth/AxiosInstance';
+import endpoints from '../Auth/endpoints';
 
 // FULL STRUCTURAL DATA LOOKUP WITH CATEGORIES AT THE TOP
 const categoriesList = [
@@ -120,6 +122,22 @@ const Shop = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const [data,setData] = useState([]);
+
+  const productData = async () => {
+    try{
+       const res = await api.get(endpoints.product.getAllProduct);
+       console.log(res?.data,'data__');
+        setData(res?.data?.data || []);
+    }
+    catch(err){
+      console.error('Error fetching product data:', err);
+    }
+  }
+
+  useEffect(()=>{
+    productData()
+  },[])
 
   // Render Sidebar Filters Content
   const renderSidebarFilters = () => (
@@ -257,7 +275,7 @@ const Shop = () => {
         {/* Product Grid Canvas Component System */}
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={4} justifyContent="space-between" sx={{ width: '100%' }}>
-            {mockProducts.map((product) => (
+            {data?.map((product) => (
               <Grid item size={{xs:12,sm:6,md:4}} key={product.id}>
                 
                 <Box 
@@ -281,7 +299,7 @@ const Shop = () => {
                     <Box 
                       component="img"
                       src={product.images[0]}
-                      alt={product.name}
+                      alt={product.title}
                       sx={{ 
                         width: '100%', height: '100%', objectFit: 'cover',
                         filter: 'brightness(0.97)',
@@ -341,11 +359,11 @@ const Shop = () => {
                 {/* Product Titles Metadata */}
                 <Stack spacing={1} alignItems="center" sx={{ textAlign: 'center' }}>
                   <Typography variant="body1" sx={{ fontFamily: '"Montserrat", sans-serif', fontWeight: 500, fontSize: '15px', color: '#111', '&:hover': { color: '#cda587' }, transition: 'color 0.2s' }}>
-                    {product.name}
+                    {product.title}
                   </Typography>
                   {product.rating > 0 && <Rating value={product.rating} precision={0.5} readOnly sx={{ fontSize: '13px', color: '#111' }} />}
                   <Stack direction="row" spacing={1.5}>
-                    <Typography sx={{ fontFamily: 'Montserrat', fontWeight: 600, fontSize: '14px', color: '#888', textDecoration: 'line-through' }}>${product.oldPrice.toFixed(2)}</Typography>
+                    <Typography sx={{ fontFamily: 'Montserrat', fontWeight: 600, fontSize: '14px', color: '#888', textDecoration: 'line-through' }}></Typography>
                     <Typography sx={{ fontFamily: 'Montserrat', fontWeight: 600, fontSize: '14px', color: '#111' }}>${product.price.toFixed(2)}</Typography>
                   </Stack>
                 </Stack>

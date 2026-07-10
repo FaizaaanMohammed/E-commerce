@@ -36,24 +36,27 @@ const QuickViewModal = ({ open, handleClose, product }) => {
           <Grid container spacing={2} disableEqualOverflow>
             {/* Left Side: Main Product Image preview */}
             <Grid size={{ xs: 12, md: 6 }}>
-              <Box component="img" src={product.images[0]} alt={product.name} sx={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover' }} />
+              <Box component="img" src={product.images[0]} alt={product.tittle} sx={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover' }} />
             </Grid>
 
             {/* Right Side: Metadata specs */}
             <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <Typography variant="h4" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, mb: 1, fontSize: '26px' }}>{product.name}</Typography>
+              <Typography variant="h4" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, mb: 1, fontSize: '26px' }}>{product.title}</Typography>
               
               {product.rating > 0 && (
                 <Rating value={product.rating} precision={0.5} readOnly sx={{ fontSize: '16px', color: '#111', mb: 2 }} />
               )}
 
               <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                <Typography sx={{ fontFamily: 'Montserrat', fontWeight: 600, fontSize: '18px', color: '#111' }}>${product.price.toFixed(2)}</Typography>
-                <Typography sx={{ fontFamily: 'Montserrat', fontSize: '15px', color: '#888', textDecoration: 'line-through' }}>${product.oldPrice.toFixed(2)}</Typography>
+                <Typography sx={{ fontFamily: 'Montserrat', fontWeight: 600, fontSize: '18px', color: '#111' }}>${product.price}</Typography>
+                <Typography sx={{ fontFamily: 'Montserrat', fontSize: '15px', color: '#888', textDecoration: 'line-through' }}>${product.price}</Typography>
               </Stack>
 
-              <Typography variant="body2" sx={{ fontFamily: 'Montserrat', color: '#555', lineHeight: 1.6, mb: 4 }}>
-                Premium minimalist structural craft designed for modern lifestyle aesthetics and luxury structural utility dynamics.
+              <Typography variant="body2" sx={{ fontFamily: 'Montserrat', color: '#555', lineHeight: 1.6, mb: 2 }}>
+               {product?.description}
+              </Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'Montserrat', color: '#555', lineHeight: 1.6, mb: 2 }}>
+               Stock : {product?.stock}
               </Typography>
 
               <Button variant="outlined" sx={{ borderColor: '#111', color: '#111', borderRadius: 0, py: 1.5, fontFamily: 'Montserrat', fontWeight: 600, '&:hover': { bgcolor: '#111', color: '#fff', borderColor: '#111' } }}>
