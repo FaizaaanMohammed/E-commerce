@@ -1,5 +1,4 @@
-// src/components/TopNavbar.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -17,6 +16,7 @@ import {
   ListItemText,
   Badge,
   InputBase,
+  Avatar,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -32,15 +32,46 @@ const TopNavbar = () => {
   const location = useLocation();
   const theme = useTheme();
 
-  // Tablet + Mobile break layout toggle
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   
-  // Search toggle states
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userInitial, setUserInitial] = useState("");
+
+  
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("nexus_user");
+
+    if (token) {
+      setIsAuthenticated(true); 
+      
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          
+          const name = parsedUser?.name || parsedUser?.user?.name;
+          if (name) {
+            setUserInitial(name.charAt(0).toUpperCase());
+          } else {
+            setUserInitial("N"); 
+          }
+        } catch (e) {
+          setUserInitial("N"); 
+        }
+      } else {
+        setUserInitial("N"); 
+      }
+    } else {
+      setIsAuthenticated(false);
+      setUserInitial("");
+    }
+  }, [location, authOpen]); 
 
   const menuItems = [
     { name: "Home", path: "/" },
@@ -48,9 +79,26 @@ const TopNavbar = () => {
     { name: "Collections", path: "/collections" },
     { name: "New Arrivals", path: "/new-arrivals" },
     { name: "Sale", path: "/sale", isSale: true },
-    
-   
   ];
+
+  const handleProtectedRoute = (targetPath) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setAuthOpen(true); 
+    } else {
+      navigate(targetPath); 
+    }
+  };
+
+
+  const handleIdentityClick = () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/profile"); 
+    } else {
+      setAuthOpen(true);
+    }
+  };
 
   const handleSearchSubmit = (e) => {
     if (e.key === "Enter" && searchQuery.trim()) {
@@ -71,18 +119,11 @@ const TopNavbar = () => {
           bgcolor: "#f8f6f3",
         }}
       >
-        <Toolbar
-          sx={{ justifyContent: "space-between", height: "80px", px: 0 }}
-        >
-          {/* ==========================================
-              CONDITION A: DESKTOP NAVBAR LAYOUT
-             ========================================== */}
+        <Toolbar sx={{ justifyContent: "space-between", height: "80px", px: 0 }}>
+          
           {!isMobile && (
             <>
-              {/* Left Side: Brand Logo */}
-              <Box
-                sx={{ flex: 1, display: "flex", justifyContent: "flex-start" }}
-              >
+              <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
                 <Typography
                   variant="h5"
                   onClick={() => navigate("/")}
@@ -98,13 +139,8 @@ const TopNavbar = () => {
                 </Typography>
               </Box>
 
-              {/* Middle Section: Links hide if inline search takes up space */}
               {!searchOpen && (
-                <Stack
-                  direction="row"
-                  spacing={3}
-                  sx={{ justifyContent: "center" }}
-                >
+                <Stack direction="row" spacing={3} sx={{ justifyContent: "center" }}>
                   {menuItems.map((item) => {
                     const isActive = location.pathname === item.path;
                     return (
@@ -135,7 +171,6 @@ const TopNavbar = () => {
                 </Stack>
               )}
 
-              {/* Right Side: Utilities Track */}
               <Stack
                 direction="row"
                 spacing={2.5}
@@ -145,7 +180,6 @@ const TopNavbar = () => {
                   alignItems: "center",
                 }}
               >
-                {/* Expandable Search Container */}
                 <Box
                   sx={{
                     display: "flex",
@@ -156,10 +190,7 @@ const TopNavbar = () => {
                     overflow: "hidden",
                   }}
                 >
-                  <IconButton 
-                    onClick={() => setSearchOpen(!searchOpen)} 
-                    sx={{ color: "#111", p: 0.5 }}
-                  >
+                  <IconButton onClick={() => setSearchOpen(!searchOpen)} sx={{ color: "#111", p: 0.5 }}>
                     <SearchIcon sx={{ fontSize: "22px" }} />
                   </IconButton>
                   <InputBase
@@ -176,32 +207,44 @@ const TopNavbar = () => {
                     }}
                   />
                   {searchOpen && (
-                    <IconButton 
-                      onClick={() => { setSearchOpen(false); setSearchQuery(""); }} 
-                      sx={{ p: 0.5, color: "#aaa" }}
-                    >
+                    <IconButton onClick={() => { setSearchOpen(false); setSearchQuery(""); }} sx={{ p: 0.5, color: "#aaa" }}>
                       <CloseIcon sx={{ fontSize: "16px" }} />
                     </IconButton>
                   )}
                 </Box>
 
-                <IconButton onClick={() => setAuthOpen(true)} sx={{ color: "#111", p: 0.5 }}>
-                  <PermIdentityIcon sx={{ fontSize: "22px" }} />
+                <IconButton onClick={handleIdentityClick} sx={{ p: 0.5 }}>
+                  {isAuthenticated ? (
+                    <Avatar 
+                      sx={{ 
+                        width: 28, 
+                        height: 28, 
+                        bgcolor: "#1A1A1A", 
+                        color: "white", 
+                        fontSize: "13px", 
+                        fontWeight: 600,
+                        fontFamily: "Montserrat",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {userInitial}
+                    </Avatar>
+                  ) : (
+                    <PermIdentityIcon sx={{ color: "#111", fontSize: "22px" }} />
+                  )}
                 </IconButton>
 
-                {/* Wishlist Utility */}
-                <IconButton onClick={() => navigate("/wishlist")} sx={{ color: "#111", p: 0.5 }}>
+                <IconButton onClick={() => handleProtectedRoute("/wishlist")} sx={{ color: "#111", p: 0.5 }}>
                   <Badge 
                     badgeContent={0} 
                     showZero={false}
                     sx={{ "& .MuiBadge-badge": { bgcolor: "#cda587", color: "#fff" } }}
-                    path="/wishlist"
                   >
                     <FavoriteBorderIcon sx={{ fontSize: "22px" }} />
                   </Badge>
                 </IconButton>
                 
-                <IconButton onClick={() => navigate("/cart")} sx={{ p: 0.5 }}>
+                <IconButton onClick={() => handleProtectedRoute("/cart")} sx={{ p: 0.5 }}>
                   <Badge 
                     badgeContent={2} 
                     sx={{
@@ -223,9 +266,6 @@ const TopNavbar = () => {
             </>
           )}
 
-          {/* ==========================================
-              CONDITION B: MOBILE & TABLET LAYOUT 
-             ========================================== */}
           {isMobile && (
             <Box
               sx={{
@@ -236,10 +276,7 @@ const TopNavbar = () => {
               }}
             >
               <Stack direction="row" alignItems="center" spacing={1.5}>
-                <IconButton
-                  onClick={() => setDrawerOpen(true)}
-                  sx={{ p: 0.5, color: "#111" }}
-                >
+                <IconButton onClick={() => setDrawerOpen(true)} sx={{ p: 0.5, color: "#111" }}>
                   <MenuIcon sx={{ fontSize: "24px" }} />
                 </IconButton>
                 <Typography
@@ -258,29 +295,28 @@ const TopNavbar = () => {
               </Stack>
               
               <Stack direction="row" spacing={1.5} alignItems="center">
-                <IconButton onClick={() => navigate("/search-page-or-trigger")} sx={{ color: "#111", p: 0.5 }}>
+                <IconButton onClick={() => navigate("/shop")} sx={{ color: "#111", p: 0.5 }}>
                   <SearchIcon sx={{ fontSize: "22px" }} />
                 </IconButton>
-                <IconButton onClick={() => setAuthOpen(true)} sx={{ color: "#111", p: 0.5 }}>
-                  <PermIdentityIcon sx={{ fontSize: "22px" }} />
+
+                <IconButton onClick={handleIdentityClick} sx={{ p: 0.5 }}>
+                  {isAuthenticated ? (
+                    <Avatar sx={{ width: 26, height: 26, bgcolor: "#1A1A1A", color: "white", fontSize: "12px", fontWeight: 600, fontFamily: "Montserrat", cursor: "pointer" }}>
+                      {userInitial}
+                    </Avatar>
+                  ) : (
+                    <PermIdentityIcon sx={{ color: "#111", fontSize: "22px" }} />
+                  )}
                 </IconButton>
-                <IconButton onClick={() => navigate("/wishlist")} sx={{ color: "#111", p: 0.5 }}>
+
+                <IconButton onClick={() => handleProtectedRoute("/wishlist")} sx={{ color: "#111", p: 0.5 }}>
                   <FavoriteBorderIcon sx={{ fontSize: "22px" }} />
                 </IconButton>
-                <IconButton onClick={() => navigate("/cart")} sx={{ p: 0.5 }}>
+
+                <IconButton onClick={() => handleProtectedRoute("/cart")} sx={{ p: 0.5 }}>
                   <Badge 
                     badgeContent={2} 
-                    sx={{
-                      "& .MuiBadge-badge": {
-                        bgcolor: "#111",
-                        color: "#fff",
-                        fontFamily: "Montserrat",
-                        fontSize: "9px",
-                        fontWeight: "bold",
-                        minWidth: "16px",
-                        height: "16px",
-                      }
-                    }}
+                    sx={{ "& .MuiBadge-badge": { bgcolor: "#111", color: "#fff", fontFamily: "Montserrat", fontSize: "9px", fontWeight: "bold" } }}
                   >
                     <ShoppingBagIcon sx={{ color: "#111", fontSize: "22px" }} />
                   </Badge>
@@ -291,7 +327,6 @@ const TopNavbar = () => {
         </Toolbar>
       </AppBar>
 
-      {/* MOBILE & TABLET RESPONSIVE DRAWER */}
       <Drawer
         anchor="left"
         open={drawerOpen}
@@ -299,31 +334,17 @@ const TopNavbar = () => {
         PaperProps={{ sx: { width: { xs: "280px", sm: "320px" }, bgcolor: "#f8f6f3" } }}
       >
         <Box sx={{ padding: "30px 24px" }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 4,
-            }}
-          >
-            <Typography
-              variant="h5"
-              sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 900 }}
-            >
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
+            <Typography variant="h5" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 900 }}>
               NEXUS OS.
             </Typography>
-            <IconButton
-              onClick={() => setDrawerOpen(false)}
-              sx={{ color: "#111", p: 0 }}
-            >
+            <IconButton onClick={() => setDrawerOpen(false)} sx={{ color: "#111", p: 0 }}>
               <CloseIcon />
             </IconButton>
           </Box>
           <List>
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path;
-
               return (
                 <ListItem disablePadding key={item.name} sx={{ mb: 0.5 }}>
                   <ListItemButton

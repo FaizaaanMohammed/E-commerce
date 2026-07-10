@@ -11,8 +11,12 @@ import OrderIcon from '@mui/icons-material/ShoppingBagOutlined';
 import CoinIcon from '@mui/icons-material/LocalActivityOutlined';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import LogoutIcon from '@mui/icons-material/LogoutOutlined';
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
+
+  const navigate = useNavigate();
+
   const [profileData, setProfileData] = useState({
     name: "Faizan",
     email: "faizan@nexusos.com",
@@ -36,7 +40,8 @@ const Profile = () => {
   };
 
   const handleLogout = () => {
-    // Apni logout logic ya routing yahan handle kar lena bhai
+    localStorage.removeItem('token');
+    navigate('/')
     console.log("Logged out successfully");
   };
 
