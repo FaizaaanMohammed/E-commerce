@@ -5,6 +5,12 @@ const endpoints = {
   },
   product:{
     getAllProduct:"/api/v1/product/All-product"
+  },
+  orders:{
+     getAllOrders:"/api/v1/orders/admin/all-orders"
+  },
+  wallet:{
+     walletData:"/api/v1/wallet/get-config"
   }
 }
 

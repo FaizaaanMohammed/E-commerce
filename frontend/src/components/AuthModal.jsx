@@ -22,7 +22,7 @@ const AuthModal = ({ open, handleClose }) => {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState(''); // रजिस्ट्रेशन सक्सेस मैसेज के लिए
+  const [successMsg, setSuccessMsg] = useState(''); 
 
   const handleInputChange = (e) => {
     setFormData({
@@ -60,7 +60,7 @@ const AuthModal = ({ open, handleClose }) => {
       if (isLogin) {
         // --- LOGIN FLOW ---
         if (data.token) localStorage.setItem('token', data.token);
-        if (data.user) localStorage.setItem('nexus_user', JSON.stringify(data.user));
+        if (data.data) localStorage.setItem('nexus_user', JSON.stringify(data.data));
 
         handleClose();
         setFormData({ name: '', email: '', password: '' });

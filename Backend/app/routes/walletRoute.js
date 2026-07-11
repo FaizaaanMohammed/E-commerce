@@ -5,7 +5,7 @@ const Authcheck = require('../middlewares/AuthCheck');
 const router = express.Router();
 
 // 1. GET Current Rules
-router.get('/get-config', Authcheck, AdminAuthcheck, (req, res, next) => {
+router.get('/get-config', Authcheck, (req, res, next) => {
     // #swagger.tags = ['Wallet']
     walletController.getWalletConfig(req, res, next);
 });
