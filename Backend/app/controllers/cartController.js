@@ -90,6 +90,7 @@ class cartController {
       return res.status(httpStausCode.OK).json({
         success: true,
         message: "Cart details get successfully !",
+        length: cart?.products?.length,
         data: {
           cartId: cart._id,
           products: cart.products,

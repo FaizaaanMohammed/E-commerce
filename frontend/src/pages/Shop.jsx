@@ -12,11 +12,13 @@ import {
   Pagination,
   useMediaQuery,
   useTheme,
+  CircularProgress, // Added for loading state feedback
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import CheckIcon from "@mui/icons-material/Check"; // Added for success feedback
 import TuneIcon from "@mui/icons-material/Tune";
 import CloseIcon from "@mui/icons-material/Close";
 import QuickViewModal from "../components/QuickViewModal";
@@ -37,6 +39,10 @@ const Shop = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [masterCategories, setMasterCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // Cart Status Tracking States
+  const [loadingCart, setLoadingCart] = useState({}); // e.g., { productId: true }
+  const [addedToCart, setAddedToCart] = useState({});  // e.g., { productId: true }
 
   // Frontend Pagination States
   const [page, setPage] = useState(1);
@@ -78,6 +84,30 @@ const Shop = () => {
       setFilteredProducts(res?.data?.data || []);
     } catch (err) {
       console.error("Error fetching filtered product data matrix:", err);
+    }
+  };
+
+  // Add to Cart API Interaction Handler
+  const handleAddToCart = async (productId) => {
+    // Set loading state for this specific product
+    setLoadingCart((prev) => ({ ...prev, [productId]: true }));
+    try {
+      // Adjusted based on standard endpoint objects. Replace endpoints.cart.add if named differently.
+      const url = endpoints?.cart?.add || "/cart/add"; 
+      await api.post(url, { productId, quantity: 1 });
+
+      // Mark as added successfully
+      setAddedToCart((prev) => ({ ...prev, [productId]: true }));
+
+      // Optional: Revert checkmark icon back to the shopping bag after 3 seconds
+      setTimeout(() => {
+        setAddedToCart((prev) => ({ ...prev, [productId]: false }));
+      }, 3000);
+    } catch (err) {
+      console.error("Error adding item to cart:", err);
+    } finally {
+      // Clear loading state
+      setLoadingCart((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -218,7 +248,7 @@ const Shop = () => {
             onChange={(e, val) => setPriceRange(val)}
             valueLabelDisplay="auto"
             min={10}
-            max={10000000}
+            max={1000000}
             sx={{
               color: "#111",
               height: 2,
@@ -390,14 +420,35 @@ const Shop = () => {
                               color: "#111",
                               p: 1.2,
                               boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-                              "&:hover": { bgcolor: "#111", color: "#fff" },
+                              "& :hover": { bgcolor: "#111", color: "#fff" },
                             }}
                           >
                             <RemoveRedEyeIcon sx={{ fontSize: "16px" }} />
                           </IconButton>
-                          <IconButton sx={{ bgcolor: "#fff", color: "#111", p: 1.2, "&:hover": { bgcolor: "#111", color: "#fff" } }}>
-                            <ShoppingBagIcon sx={{ fontSize: "16px" }} />
+
+                          {/* Interactive Add To Cart Action Trigger */}
+                          <IconButton 
+                            onClick={() => handleAddToCart(product._id)}
+                            disabled={loadingCart[product._id]}
+                            sx={{ 
+                              bgcolor: addedToCart[product._id] ? "#4caf50" : "#fff", 
+                              color: addedToCart[product._id] ? "#fff" : "#111", 
+                              p: 1.2, 
+                              "&:hover": { 
+                                bgcolor: addedToCart[product._id] ? "#388e3c" : "#111", 
+                                color: "#fff" 
+                              } 
+                            }}
+                          >
+                            {loadingCart[product._id] ? (
+                              <CircularProgress size={16} color="inherit" />
+                            ) : addedToCart[product._id] ? (
+                              <CheckIcon sx={{ fontSize: "16px" }} />
+                            ) : (
+                              <ShoppingBagIcon sx={{ fontSize: "16px" }} />
+                            )}
                           </IconButton>
+
                           <IconButton sx={{ bgcolor: "#fff", color: "#111", p: 1.2, "&:hover": { bgcolor: "#111", color: "#fff" } }}>
                             <FavoriteBorderIcon sx={{ fontSize: "16px" }} />
                           </IconButton>

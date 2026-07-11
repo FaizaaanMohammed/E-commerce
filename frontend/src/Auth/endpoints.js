@@ -14,6 +14,9 @@ const endpoints = {
   },
   userDetails:{
      getSingleUserDetails : "/api/v1/userList/users"
+  },
+  cart:{
+     add:"/api/v1/cart/add-cart"
   }
 }
 

@@ -78,7 +78,7 @@ const Profile = () => {
         });
       }
     } catch (err) {
-      console.error("❌ Crucial API Binding Failure Log:", err?.response?.data || err.message);
+      console.error("Crucial API Binding Failure Log:", err?.response?.data || err.message);
     }
   };
 
