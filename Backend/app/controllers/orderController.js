@@ -83,7 +83,7 @@ class orderController {
         totalAmount,
         walletPaymentAmount: 0,
         remainingPaymentMethod: remainingPaymentMethod || "COD",
-        orderStatus: "Delivered", // Aapka preset default
+        orderStatus: "Processing", // Aapka preset default
         coinsEarnedFromOrder: calculatedCoins
       });
 

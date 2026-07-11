@@ -36,13 +36,13 @@ const orderSchema = new mongoose.Schema({
   },
   remainingPaymentMethod: {
     type: String,
-    enum: ['COD', 'ONLINE'], // Insufficient wallet balance ke baad ka selection mode[cite: 1]
+    enum: ['COD', 'UPI','CARD'], // Insufficient wallet balance ke baad ka selection mode[cite: 1]
     required: true
   },
   orderStatus: {
     type: String,
     enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
-    default: 'Pending'
+    default: 'Processing'
   },
   coinsEarnedFromOrder: {
     type: Number,

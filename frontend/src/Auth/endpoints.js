@@ -7,7 +7,8 @@ const endpoints = {
     getAllProduct:"/api/v1/product/All-product"
   },
   orders:{
-     getAllOrders:"/api/v1/orders/my-orders"
+     getAllOrders:"/api/v1/orders/my-orders",
+     postOrder:"/api/v1/orders/create-order"
   },
   wallet:{
      walletData:"/api/v1/wallet/get-config"
@@ -16,7 +17,9 @@ const endpoints = {
      getSingleUserDetails : "/api/v1/userList/users"
   },
   cart:{
-     add:"/api/v1/cart/add-cart"
+     add:"/api/v1/cart/add-cart",
+     getCart:"/api/v1/cart/get-cart",
+     cartRemove:"/api/v1/cart/remove-item"
   }
 }
 
