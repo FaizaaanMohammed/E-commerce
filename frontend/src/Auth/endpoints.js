@@ -11,6 +11,9 @@ const endpoints = {
   },
   wallet:{
      walletData:"/api/v1/wallet/get-config"
+  },
+  userDetails:{
+     getSingleUserDetails : "/api/v1/userList/users"
   }
 }
 

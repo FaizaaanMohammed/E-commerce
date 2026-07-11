@@ -16,7 +16,6 @@ import {
   ListItemText,
 } from "@mui/material";
 
-import WalletIcon from "@mui/icons-material/WalletOutlined";
 import PermIdentityIcon from "@mui/icons-material/PermIdentityOutlined";
 import OrderIcon from "@mui/icons-material/ShoppingBagOutlined";
 import CoinIcon from "@mui/icons-material/LocalActivityOutlined";
@@ -28,8 +27,14 @@ import endpoints from "../Auth/endpoints";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [orderHistory, setOrderHistory] = useState([]); // Fixed Spelling
+  const [orderHistory, setOrderHistory] = useState([]); 
   const [user, setUser] = useState(null);
+  const [singleUSerDetails, setSingleUserDetails] = useState({});
+  const [isEditing, setIsEditing] = useState(false);
+  
+  const [coinToRupeeValue, setCoinToRupeeValue] = useState(100); 
+  const [coinsCashValue, setCoinsCashValue] = useState(0);
+
   const [profileData, setProfileData] = useState({
     name: "",
     email: "",
@@ -37,21 +42,43 @@ const Profile = () => {
     address: "",
   });
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [coinToRupeeValue, setCoinToRupeeValue] = useState(null); // Fixed: initialized to null instead of {}
+  // Dynamic values binding safely synced from state containers
+  const userCoinsBalance = singleUSerDetails?.coinBalance || 0; 
 
-  // Coins Calculation Logic safely handled
-  const userCoinsBalance = user?.coins || 0; 
-  const coinsCashValue = coinToRupeeValue ? userCoinsBalance / coinToRupeeValue : 0;
-  
-  const getOrderHistory = async () => {
+  const getOrderHistory = async(userId) => {
+    console.log(userId,'userId')
+
     try {
+      // 1. Parallel responses extraction safely
       const res = await api.get(endpoints.orders.getAllOrders);
       const walletRes = await api.get(endpoints.wallet.walletData);
+      
+      // FIXED spelling: endpoints.userDetails kiya aur params ke bajaye confirmed userId use ki
+      const userRes = await api.get(`${endpoints.userDetails.getSingleUserDetails}/${userId}`);
+      
       setOrderHistory(res?.data?.data || []);
-      setCoinToRupeeValue(walletRes?.data?.data?.coinToRupeeRate || 100); // Default fallback calculation rate
+      
+      // 2. Extract configuration layers directly
+      const rate = walletRes?.data?.data?.coinToRupeeRate || 100;
+      setCoinToRupeeValue(rate);
+      
+      const dynamicUser = userRes?.data?.user;
+      if (dynamicUser) {
+        setSingleUserDetails(dynamicUser);
+        
+        // Dynamic balance injection directly via local sync mapping
+        setCoinsCashValue(dynamicUser?.rupeeBalance || 0);
+
+        // Fill up fields layout fields dynamically
+        setProfileData({
+          name: dynamicUser.name || "N/A",
+          email: dynamicUser.email || "N/A",
+          phone: dynamicUser.phone || "+91 0000000000",
+          address: dynamicUser.address || "Address not provided",
+        });
+      }
     } catch (err) {
-      console.log(err);
+      console.error("❌ Crucial API Binding Failure Log:", err?.response?.data || err.message);
     }
   };
 
@@ -62,16 +89,10 @@ const Profile = () => {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
-        
-        // Dynamic user details initial state sync
-        setProfileData({
-          name: parsedUser?.name || "N/A",
-          email: parsedUser?.email || "N/A",
-          phone: parsedUser?.phone || "+91 0000000000",
-          address: parsedUser?.address || "Address not provided",
-        });
 
-        getOrderHistory();
+        if (parsedUser?.id) {
+          getOrderHistory(parsedUser.id); // Storage sync workflow kicked off cleanly
+        }
       } catch (error) {
         console.error("Error parsing user data from localStorage", error);
       }
@@ -80,13 +101,13 @@ const Profile = () => {
 
   const handleSave = () => {
     setIsEditing(false);
-    // Yahan par aap profile update ki API hit kar sakte hain agar backend integrated hai
   };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("nexus_user");
     setUser(null);
+    setSingleUserDetails({});
     navigate("/");
     console.log("Logged out successfully");
   };
@@ -272,7 +293,7 @@ const Profile = () => {
           </Grid>
 
           {/* Right Block: Account Profile Form & Purchases */}
-          <Grid item xs={12} md={8} size={{xs:12,md:8}}>
+          <Grid item xs={12} md={8} md={4} size={{xs:12,md:8}}>
             <Stack spacing={4}>
               <Paper
                 sx={{
