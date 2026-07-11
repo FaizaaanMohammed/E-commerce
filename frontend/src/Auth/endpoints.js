@@ -7,7 +7,7 @@ const endpoints = {
     getAllProduct:"/api/v1/product/All-product"
   },
   orders:{
-     getAllOrders:"/api/v1/orders/admin/all-orders"
+     getAllOrders:"/api/v1/orders/my-orders"
   },
   wallet:{
      walletData:"/api/v1/wallet/get-config"

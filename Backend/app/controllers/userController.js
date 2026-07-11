@@ -46,6 +46,57 @@ class userController {
     }
   }
 
+  // 3. GEt single user Data 
+
+  // 3. Get single user Data 
+async getSingleUserData(req, res) {
+  try {
+    const { id } = req.params; 
+
+    
+    const config = await WalletConfig.findOne();
+    const coinToRupeeRate = config?.coinToRupeeRate || 100;
+
+    
+    const user = await User.findById(id).select("name email walletBalance status phone address");
+
+    // Agar user nahi milta toh 404 error return karenge
+    if (!user) {
+      return res.status(httpStausCode.NOT_FOUND).json({ 
+        success: false, 
+        message: "User not found" 
+      });
+    }
+
+    // 3. Dynamic Rupee conversion mapping (Same as above)
+    const coins = user.walletBalance || 0;
+    const rupeeBalance = Number((coins / coinToRupeeRate).toFixed(2));
+
+    // 4. Clean Frontend Responsive Data Format
+    const formattedUser = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone || "", // Frontend form fallback ke liye
+      address: user.address || "", // Frontend shipping textfield ke liye
+      coinBalance: coins,
+      rupeeBalance: rupeeBalance,
+      status: user.status || "active"
+    };
+
+    return res.status(httpStausCode.OK).json({
+      success: true,
+      user: formattedUser
+    });
+
+  } catch (err) {
+    return res.status(httpStausCode.INTERNAL_SERVER_ERROR).json({ 
+      success: false, 
+      message: err.message 
+    });
+  }
+}
+
   // 📡 2. TOGGLE USER ACCOUNT STATUS (BLOCK / UNBLOCK)
   async toggleUserStatus(req, res) {
     try {

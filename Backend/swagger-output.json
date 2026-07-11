@@ -538,6 +538,29 @@
         }
       }
     },
+    "/userList/users/{id}": {
+      "get": {
+        "tags": [
+          "User List"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/userList/admin/users/status/{id}": {
       "put": {
         "tags": [

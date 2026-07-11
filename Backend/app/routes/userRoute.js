@@ -10,6 +10,11 @@ router.get("/admin/users", Authcheck, AdminAuthcheck, (req, res, next) => {
     userController.getAllUsersForAdmin(req, res, next);
 });
 
+router.get("/users/:id",Authcheck,(req,res,next) =>{
+    // #swagger.tags = ["User List"]
+    userController.getSingleUserData(req,res,next);
+})
+
 router.put("/admin/users/status/:id", Authcheck, AdminAuthcheck, (req, res, next) => {
     // #swagger.tags = ['User List']
     userController.toggleUserStatus(req, res, next);
