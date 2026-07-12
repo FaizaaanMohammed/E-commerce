@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-
-const Productschema = new  mongoose.Schema({
+const Productschema = new mongoose.Schema(
+  {
     title: {
       type: String,
       required: [true, "Product tittle is required"],
@@ -20,6 +20,12 @@ const Productschema = new  mongoose.Schema({
       type: String,
       required: [true, "Product category is required"],
     },
+    collectionName: {
+      type: String,
+      trim: true,
+      default: "Minimalist Clothing", 
+      required:true
+    },
     stock: {
       type: Number,
       required: [true, "Product stock is requierd"],
@@ -27,15 +33,15 @@ const Productschema = new  mongoose.Schema({
       default: 0,
     },
     images: {
-      type: [String], // Array of image URLs (Cloudinary se aane waale)
+      type: [String],
       required: [true],
     },
     coinRewardEligible: {
       type: Boolean,
-      default: true, 
+      default: true,
     },
   },
-  { timestamps: true }
-)
+  { timestamps: true },
+);
 
-module.exports = mongoose.model("product", Productschema)
+module.exports = mongoose.model("product", Productschema);

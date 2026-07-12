@@ -93,6 +93,19 @@
         }
       }
     },
+    "/product/collections/get-all": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/product/create-product": {
       "post": {
         "tags": [

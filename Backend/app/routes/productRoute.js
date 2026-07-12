@@ -5,6 +5,12 @@ const Authcheck = require('../middlewares/AuthCheck');
 const upload = require('../utils/fileUpload');
 const router = express.Router();
 
+
+router.get("/collections/get-all", (req,res,next)=>{
+     // #swagger.tags = ['Products']
+   productController.getCollectionsData(req,res,next)
+});
+
 router.post('/create-product', Authcheck, AdminAuthcheck, upload.array('images', 5), (req, res, next) => {
     // #swagger.tags = ['Products']
     productController.createProduct(req, res, next);
@@ -24,5 +30,7 @@ router.delete('/delete-product/:id', Authcheck, AdminAuthcheck, (req, res, next)
     // #swagger.tags = ['Products']
     productController.deleteProduct(req, res, next);
 });
+
+
 
 module.exports = router;

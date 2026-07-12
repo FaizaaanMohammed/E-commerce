@@ -22,15 +22,14 @@ async createProduct(req, res) {
     let requestData = {};
 
     // 2. Bulletproof Parsing: Check karein data wrapper string hai ya direct fields hain
-    if (req.body.data && typeof req.body.data === "string") {
-      requestData = JSON.parse(req.body.data);
-    } else {
-      // Agar direct payload aa raha ho (Jaise aapke frontend screenshot mein hai)
-      requestData = req.body;
-    }
+    if (req.body && req.body.data && typeof req.body.data === "string") {
+        requestData = JSON.parse(req.body.data);
+      } else if (req.body) {
+        requestData = req.body;
+      }
 
     // 3. Variables destructure karein safely
-    const { title, description, price, category, stock, coinRewardEligible } = requestData;
+    const { title, description, price, category, stock, coinRewardEligible,collectionName } = requestData;
 
     // --- Baki ka aapka upload aur creation logic bilkul same rahega ---
     let imageUrls = [];
@@ -53,6 +52,7 @@ async createProduct(req, res) {
       stock,
       images: imageUrls,
       coinRewardEligible,
+      collectionName: collectionName || ""
     });
 
     return res.status(httpStatusCode.CREATED).json({
@@ -69,6 +69,55 @@ async createProduct(req, res) {
     });
   }
 }
+
+// collection
+
+async getCollectionsData(req, res) {
+    try {
+      const dynamicCollections = await Product.aggregate([
+        // 1. Filter out documents with invalid or missing tokens
+        { 
+          $match: { 
+            collectionName: { $ne: "" },
+            collectionName: { $exists: true }
+          } 
+        },
+        
+        // 2. Pack items based on identical grouping tags
+        {
+          $group: {
+            _id: "$collectionName",
+            name: { $first: "$collectionName" },
+            image: { $first: { $arrayElemAt: ["$images", 0] } }, // First item auto extraction cover logic
+            products: { $push: "$$ROOT" } 
+          }
+        },
+
+        // 3. Project output elements structured for the dynamic UI template
+        {
+          $project: {
+            _id: 0,
+            id: { $toLower: { $replaceAll: { input: "$_id", find: " ", replacement: "-" } } },
+            name: 1,
+            image: 1,
+            count: { $concat: [ { $toString: { $size: "$products" } }, " Products Available" ] },
+            products: 1
+          }
+        }
+      ]);
+
+      return res.status(httpStatusCode.OK).json({
+        success: true,
+        message: "Collections parsed and grouped seamlessly.",
+        data: dynamicCollections,
+      });
+    } catch (err) {
+      return res.status(httpStatusCode.BAD_REQUEST).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  }
 
   // ==================== GET ALL PRODUCTS ====================
   async getProduct(req, res) {
