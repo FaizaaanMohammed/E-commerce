@@ -201,7 +201,7 @@ const Profile = () => {
                           fontWeight: 500,
                         }}
                       >
-                        {userCoinsBalance.toLocaleString()}{" "}
+                        {userCoinsBalance.toLocaleString()}
                         <span
                           style={{
                             fontSize: "15px",

@@ -26,13 +26,14 @@ const Cart = () => {
   const [upiId, setUpiId] = useState('');
   const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '' });
   
-  const userCoinsBalance = 50000; 
-  const coinsDiscountValue = userCoinsBalance / 100; 
+  // Dynamic Wallet State Containers
+  const [userCoinsBalance, setUserCoinsBalance] = useState(0);
+  const [coinToRupeeValue, setCoinToRupeeValue] = useState(100);
 
-  // Phase 1: Fetch Cart details from Backend
-  const fetchCartDetails = async () => {
+  // Phase 1: Fetch Cart details & Wallet Details from Backend
+  const fetchCartAndWalletDetails = async () => {
     try {
-      // 🔥 FIXED: endpoints.cart.getCart mapping
+      // 1. Fetch Cart
       const url = endpoints.cart?.getCart || "/api/v1/cart/get-cart";
       const res = await api.get(url);
       if (res?.data?.success) {
@@ -48,15 +49,33 @@ const Cart = () => {
         }));
         setCartItems(structuredItems);
       }
+
+      // 2. Fetch Wallet Rate & Dynamic User Sync (Matching Profile Page logic)
+      const storedUser = localStorage.getItem("nexus_user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser?.id) {
+          const walletRes = await api.get(endpoints.wallet.walletData);
+          const userRes = await api.get(`${endpoints.userDetails.getSingleUserDetails}/${parsedUser.id}`);
+          
+          const rate = walletRes?.data?.data?.coinToRupeeRate || 100;
+          setCoinToRupeeValue(rate);
+
+          const dynamicUser = userRes?.data?.user;
+          if (dynamicUser) {
+            setUserCoinsBalance(dynamicUser?.coinBalance || 0);
+          }
+        }
+      }
     } catch (err) {
-      console.error("Error fetching cart:", err);
+      console.error("Error fetching page context data:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCartDetails();
+    fetchCartAndWalletDetails();
   }, []);
 
   // Phase 2: Update Item Quantity Sync with Backend
@@ -83,7 +102,6 @@ const Cart = () => {
   const handleRemove = async (id) => {
     setActionLoading(true);
     try {
-      // 🔥 FIXED: endpoints.cart.cartRemove mapping
       const url = endpoints.cart?.cartRemove || `/api/v1/cart/remove-item`;
       await api.delete(`${url}/${id}`);
       setCartItems(prev => prev.filter(item => item.id !== id));
@@ -94,15 +112,12 @@ const Cart = () => {
     }
   };
 
-  // Phase 4: Submit & Create Order API Call Trigger Logic (Only remainingPaymentMethod)
+  // Phase 4: Submit & Create Order API Call Trigger Logic
   const handlePlaceOrder = async () => {
     setActionLoading(true);
     try {
-      // FIXED: endpoints.orders.postOrder mapping
-      const url = endpoints.orders?.postOrder ;
-      
       const payload = {
-        remainingPaymentMethod: paymentMethod // Sends "COD", "UPI", or "CARD"
+        remainingPaymentMethod: paymentMethod 
       };
 
       const res = await api.post(endpoints.orders.postOrder, payload);
@@ -120,8 +135,10 @@ const Cart = () => {
     }
   };
 
+  // Calculations tied dynamically to runtime rates
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const shipping = subtotal > 4000 || subtotal === 0 ? 0 : 150;
+  const coinsDiscountValue = userCoinsBalance / coinToRupeeValue; 
   const coinsDeduction = useCoins ? coinsDiscountValue : 0;
   const total = Math.max(0, subtotal + shipping - coinsDeduction);
 
@@ -195,7 +212,7 @@ const Cart = () => {
           <Grid container spacing={{ xs: 4, lg: 6 }}>
             
             {/* Left Side List */}
-            <Grid item xs={12} lg={8}>
+            <Grid item xs={12} lg={8} size={{xs:12,lg:7}}>
               <Stack spacing={2.5}>
                 <AnimatePresence>
                   {cartItems.map((item) => (
@@ -268,7 +285,7 @@ const Cart = () => {
             </Grid>
 
             {/* Right Side Summary Panel */}
-            <Grid item xs={12} lg={4}>
+            <Grid item xs={12} lg={4} size={{xs:12,lg:5}}>
               <Box sx={{ bgcolor: 'white', border: '1px solid #EDEDED', p: { xs: 3, md: 4 }, position: 'sticky', top: 30 }}>
                 
                 {/* Coins Block */}
@@ -278,7 +295,7 @@ const Cart = () => {
                     <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#1A1A1A', letterSpacing: '0.05em', fontFamily: 'Montserrat, sans-serif' }}>NEXUS WALLET COINS</Typography>
                   </Stack>
                   <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1, fontFamily: 'Montserrat, sans-serif' }}>
-                    Available: <b>{userCoinsBalance} coins</b> (100 coins = ₹1)
+                    Available: <b>{userCoinsBalance.toLocaleString()} coins</b> ({coinToRupeeValue} coins = ₹1)
                   </Typography>
                   <FormControlLabel
                     control={
@@ -286,10 +303,11 @@ const Cart = () => {
                         checked={useCoins} 
                         onChange={(e) => setUseCoins(e.target.checked)} 
                         size="small"
+                        disabled={userCoinsBalance === 0}
                         sx={{ color: '#1A1A1A', p: 0.5, mr: 0.5, '&.Mui-checked': { color: '#1A1A1A' } }}
                       />
                     }
-                    label={<Typography sx={{ fontSize: '12px', fontWeight: 500, fontFamily: 'Montserrat, sans-serif' }}>Redeem to save ₹{coinsDiscountValue}</Typography>}
+                    label={<Typography sx={{ fontSize: '12px', fontWeight: 500, fontFamily: 'Montserrat, sans-serif' }}>Redeem to save ₹{coinsDiscountValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>}
                   />
                 </Box>
 
@@ -375,7 +393,7 @@ const Cart = () => {
                   {useCoins && (
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="body2" sx={{ color: '#9C2B2B', fontWeight: 500, fontFamily: 'Montserrat, sans-serif', fontSize: '13px' }}>Wallet Coins Discount</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#9C2B2B', fontFamily: 'Montserrat, sans-serif', fontSize: '13px' }}>-₹{coinsDeduction}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#9C2B2B', fontFamily: 'Montserrat, sans-serif', fontSize: '13px' }}>-₹{coinsDeduction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
                     </Box>
                   )}
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -391,7 +409,7 @@ const Cart = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 3.5 }}>
                   <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A', fontFamily: 'Montserrat, sans-serif', letterSpacing: '0.02em' }}>Estimated Total</Typography>
                   <Typography sx={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', fontFamily: 'Montserrat, sans-serif' }}>
-                    ₹{total}
+                    ₹{total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Typography>
                 </Box>
 
