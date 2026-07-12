@@ -3,40 +3,38 @@ import {
   Box, Card, Typography, useTheme, Button, TextField, InputAdornment, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
   Chip, IconButton, Modal, Backdrop, Fade, CircularProgress,
-  Snackbar, Alert // 1. Added clean notification controllers
+  Snackbar, Alert 
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import CloudUploadIcon from '@mui/icons-material/CloudUpload'; // Icon for image choice selection
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'; 
 import { endpoints } from '../api/endpoints';
 
 export default function Products({ mode }) {
   const theme = useTheme();
   
-  // 🔌 Core State Matrices
   const [products, setProducts] = useState([]); 
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 🔔 Notification Alert Bar Configuration State
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // 📝 Modal Form Controller Interfaces
   const [openModal, setOpenModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProductId, setCurrentProductId] = useState(null);
   
-  // 🔄 Dynamic form mappings adapted for raw multi-part binary media uploads
+  // 🔄 Updated Matrix State mapping to hold collection name strings
   const [formData, setFormData] = useState({
     name: '',       
     category: '',   
+    collectionName: '', // 🔥 Added matching key initialization logic
     price: '',      
     stock: '',      
     description: '',
-    imageFile: null // 2. Changed tracking node from URL string to explicit File object
+    imageFile: null 
   });
 
   const handleCloseSnackbar = (event, reason) => {
@@ -44,9 +42,6 @@ export default function Products({ mode }) {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  /**
-   * 📡 Pull product assets from the repository layer
-   */
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -66,7 +61,7 @@ export default function Products({ mode }) {
 
   const handleOpenAddModal = () => {
     setIsEditing(false);
-    setFormData({ name: '', category: '', price: '', stock: '', description: '', imageFile: null });
+    setFormData({ name: '', category: '', collectionName: '', price: '', stock: '', description: '', imageFile: null });
     setOpenModal(true);
   };
 
@@ -76,10 +71,11 @@ export default function Products({ mode }) {
     setFormData({
       name: product.title,
       category: product.category,
+      collectionName: product.collectionName || '', // 🔥 Binds collection details smoothly to input forms
       price: product.price,
       stock: product.stock,
       description: product.description || '',
-      imageFile: null // Reset file hook on edit initialization loop
+      imageFile: null 
     });
     setOpenModal(true);
   };
@@ -90,21 +86,17 @@ export default function Products({ mode }) {
     }
   };
 
-  /**
-   * 💾 MULTIPART ENCODING FORM DISPATCH MATRIX
-   */
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     
-    // ⚠️ CRITICAL: Use standard FormData instead of JSON payload object matrices when sending files
     const dataWrapper = new FormData();
     dataWrapper.append('title', formData.name);
     dataWrapper.append('category', formData.category);
+    dataWrapper.append('collectionName', formData.collectionName); // 🔥 Dynamic injection parameter added cleanly
     dataWrapper.append('price', Number(formData.price));
     dataWrapper.append('stock', Number(formData.stock));
     dataWrapper.append('description', formData.description);
     
-    // Append binary image stream if chosen by workspace admin
     if (formData.imageFile) {
       dataWrapper.append('images', formData.imageFile); 
     }
@@ -114,7 +106,7 @@ export default function Products({ mode }) {
       if (isEditing) {
         await endpoints.products.update(currentProductId, dataWrapper);
         setSnackbar({ open: true, message: "Product updated successfully!", severity: 'success' });
-        await fetchProducts(); // Refresh dataset array loop to align newly updated cloud images maps
+        await fetchProducts(); 
       } else {
         await endpoints.products.create(dataWrapper);
         setSnackbar({ open: true, message: "Product initialized and added to core database ledger!", severity: 'success' });
@@ -240,6 +232,7 @@ export default function Products({ mode }) {
               <TableRow sx={{ '& th': { borderBottom: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)'}`, color: theme.palette.text.secondary, fontWeight: 800, fontFamily: '"Plus Jakarta Sans", sans-serif', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' } }}>
                 <TableCell>Product Details</TableCell>
                 <TableCell>Category</TableCell>
+                <TableCell>Collection</TableCell>
                 <TableCell>Price</TableCell>
                 <TableCell>Stock Count</TableCell>
                 <TableCell>Status</TableCell>
@@ -249,13 +242,13 @@ export default function Products({ mode }) {
             <TableBody>
               {loading && products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                     <CircularProgress size={36} sx={{ color: '#06b6d4' }} />
                   </TableCell>
                 </TableRow>
               ) : filteredProducts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 6, fontFamily: '"Plus Jakarta Sans"', color: theme.palette.text.secondary, fontWeight: 500 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6, fontFamily: '"Plus Jakarta Sans"', color: theme.palette.text.secondary, fontWeight: 500 }}>
                     No matching structural product elements found in current database segment.
                   </TableCell>
                 </TableRow>
@@ -277,6 +270,15 @@ export default function Products({ mode }) {
                       
                       <TableCell sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 500, color: theme.palette.text.secondary }}>
                         {product.category}
+                      </TableCell>
+
+                      {/* Dynamic visual identifier showing assigned collection names */}
+                      <TableCell sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 600 }}>
+                        {product.collectionName ? (
+                          <Chip label={product.collectionName} size="small" variant="outlined" sx={{ borderColor: '#06b6d4', color: '#06b6d4', fontWeight: 600 }} />
+                        ) : (
+                          <Typography variant="caption" sx={{ color: theme.palette.text.disabled, fontStyle: 'italic' }}>None</Typography>
+                        )}
                       </TableCell>
                       
                       <TableCell sx={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, fontSize: '1rem' }}>
@@ -314,7 +316,7 @@ export default function Products({ mode }) {
         </TableContainer>
       </Card>
 
-      {/* Add / Edit Inventory Modal Window (Expanded with Dynamic Inputs) */}
+      {/* Add / Edit Inventory Modal Window */}
       <Modal
         open={openModal}
         onClose={() => setOpenModal(false)}
@@ -343,7 +345,7 @@ export default function Products({ mode }) {
                   label="Product Name" required fullWidth
                   value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
                   InputLabelProps={{ style: { fontFamily: '"Plus Jakarta Sans"' } }}
-                  sx={{mb:2}}
+                  sx={{mb:1}}
                 />
                 <TextField 
                   label="Category" required fullWidth
@@ -351,6 +353,18 @@ export default function Products({ mode }) {
                   InputLabelProps={{ style: { fontFamily: '"Plus Jakarta Sans"' } }}
                   sx={{mb:1}}
                 />
+                
+                {/* 🔥 FIXED INPUT BLOCK: Seamless Collection Identifier Picker */}
+                <TextField 
+                  label="Collection Name (Optional)" fullWidth
+                  placeholder="e.g. Urban Fashions, Minimalist Clothing"
+                  value={formData.collectionName} onChange={(e) => setFormData({...formData, collectionName: e.target.value})}
+                  InputLabelProps={{ style: { fontFamily: '"Plus Jakarta Sans"' } }}
+                  helperText="Leave empty if this is a standard item not tied to a specific drop drop-down."
+                  FormHelperTextProps={{ style: { fontFamily: '"Plus Jakarta Sans"', fontSize: '11px' } }}
+                  sx={{mb:1}}
+                />
+
                 <TextField 
                   label="Price (INR)" type="number" required fullWidth
                   value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})}
@@ -371,7 +385,7 @@ export default function Products({ mode }) {
                   sx={{mb:1}}
                 />
 
-                {/* 🖼️ HIGH-TECH FILE PICKER INTERFACE (Keeps your clean design) */}
+                {/* File Picker Interface */}
                 <Box sx={{ mt: 1, mb: 2 }}>
                   <input
                     accept="image/*"
@@ -379,7 +393,7 @@ export default function Products({ mode }) {
                     id="contained-button-file"
                     type="file"
                     onChange={handleFileChange}
-                    required={!isEditing} // Mandatory only during fresh creations
+                    required={!isEditing} 
                   />
                   <label htmlFor="contained-button-file">
                     <Button
@@ -432,7 +446,7 @@ export default function Products({ mode }) {
         </Fade>
       </Modal>
 
-      {/* 🔮 GLOBAL NOTIFICATION CENTER BAR */}
+      {/* Global Notification Center */}
       <Snackbar 
         open={snackbar.open} 
         autoHideDuration={4000} 

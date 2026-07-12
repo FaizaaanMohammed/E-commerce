@@ -24,7 +24,7 @@ const Productschema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "Minimalist Clothing", 
-      required:true
+      required:false
     },
     stock: {
       type: Number,

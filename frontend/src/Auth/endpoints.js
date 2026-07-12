@@ -4,7 +4,8 @@ const endpoints = {
      login : "/api/v1/auth/login"
   },
   product:{
-    getAllProduct:"/api/v1/product/All-product"
+    getAllProduct:"/api/v1/product/All-product",
+    getCollection:"/api/v1/product/collections/getCollections"
   },
   orders:{
      getAllOrders:"/api/v1/orders/my-orders",
