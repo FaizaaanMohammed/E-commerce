@@ -34,7 +34,7 @@ const Home = () => {
     { name: "Shop", path: "/shop" },
     { name: "Collections", path: "/collections" },
     { name: "New Arrivals", path: "/new-arrivals" },
-    { name: "Sale", path: "/sale", isSale: true },
+    { name: "Blog", path: "/blog", isSale: true },
   ];
 
   // 1. डेटा लोड करने का इफेक्ट

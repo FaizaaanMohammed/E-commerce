@@ -11,6 +11,7 @@ import SalePage from './pages/SalePage';
 import Wishlist from './pages/Whistlist';
 import Cart from './pages/Cart';
 import Profile from './pages/Profile';
+import BlogPage from './pages/SalePage';
 
 
 const ProtectedRoute = ({ children }) => {
@@ -48,7 +49,7 @@ function App() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/collections" element={<CollectionPage />} />
           <Route path="/new-arrivals" element={<NewArrivalsPage />} />
-          <Route path="/sale" element={<SalePage />} />
+          <Route path="/blog" element={<BlogPage />} />
           
          
           <Route 

@@ -78,7 +78,7 @@ const TopNavbar = () => {
     { name: "Shop", path: "/shop" },
     { name: "Collections", path: "/collections" },
     { name: "New Arrivals", path: "/new-arrivals" },
-    { name: "Sale", path: "/sale", isSale: true },
+    { name: "Blog", path: "/blog", isSale: true },
   ];
 
   const handleProtectedRoute = (targetPath) => {

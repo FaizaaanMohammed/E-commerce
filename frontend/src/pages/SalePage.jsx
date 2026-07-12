@@ -1,4 +1,4 @@
-// src/pages/SalePage.jsx
+// src/pages/BlogPage.jsx
 import React, { useState } from "react";
 import {
   Box,
@@ -6,74 +6,67 @@ import {
   Grid,
   Card,
   CardMedia,
-  IconButton,
+  CardContent,
   Container,
   Stack,
   Button,
 } from "@mui/material";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import AddIcon from "@mui/icons-material/Add";
-import { useNavigate } from "react-router-dom";
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
-const SalePage = () => {
-  const navigate = useNavigate();
+const BlogPage = () => {
   const [activeFilter, setActiveFilter] = useState("ALL");
 
-  const filters = ["ALL", "CLOTHING", "ESSENTIALS", "ACCESSORIES"];
+  const filters = ["ALL", "STYLE STUDIES", "STUDIO INCLUSIONS", "MATERIALS"];
 
-  const saleProducts = [
+  const blogPosts = [
     {
-      id: "s1",
-      name: "Premium Boxy Minimalist Hoodie",
-      category: "CLOTHING",
-      originalPrice: "$110.00",
-      salePrice: "$77.00",
-      discount: "-30%",
-      image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?q=80&w=700&auto=format&fit=crop",
-      size: { xs: 12, md: 6 },
+      id: "b1",
+      title: "The Art of Minimalist Dressing: A Modern Manifesto",
+      category: "STYLE STUDIES",
+      date: "July 12, 2026",
+      readTime: "4 MIN READ",
+      excerpt: "Discover how stripping down your wardrobe to its structural foundations can amplify your personal identity and create a timeless luxury statement.",
+      image: "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=700&auto=format&fit=crop",
     },
     {
-      id: "s2",
-      name: "Structured Studio Overcoat",
-      category: "ESSENTIALS",
-      originalPrice: "$220.00",
-      salePrice: "$154.00",
-      discount: "-30%",
-      image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=700&auto=format&fit=crop",
-      size: { xs: 12, md: 6 },
+      id: "b2",
+      title: "Behind the Contours: Engineering NEXUS Footwear Drop",
+      category: "STUDIO INCLUSIONS",
+      date: "July 08, 2026",
+      readTime: "6 MIN READ",
+      excerpt: "An exclusive look into the structural architectural patterns, calculated curvature geometry, and premium cushioning modules crafting the latest drops.",
+      image: "https://images.unsplash.com/photo-1539185441755-769473a23570?q=80&w=700&auto=format&fit=crop",
     },
     {
-      id: "s3",
-      name: "Minimalist Leather Work Bag",
-      category: "ACCESSORIES",
-      originalPrice: "$160.00",
-      salePrice: "$96.00",
-      discount: "-40%",
-      image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=500&auto=format&fit=crop",
-      size: { xs: 12, md: 6 },
+      id: "b3",
+      title: "Sourcing Tailored Organic Linen: Pure Ethics Meet Fashion",
+      category: "MATERIALS",
+      date: "June 29, 2026",
+      readTime: "5 MIN READ",
+      excerpt: "Unveiling the raw harvest tracing metrics, eco-conscious yarn weaves, and local fair-wage tailoring pipelines backing our summer apparel catalog.",
+      image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=700&auto=format&fit=crop",
     },
     {
-      id: "s4",
-      name: "Relaxed Raw Edge Denim Trousers",
-      category: "CLOTHING",
-      originalPrice: "$95.00",
-      salePrice: "$66.50",
-      discount: "-30%",
+      id: "b4",
+      title: "Monochromatic Palettes and Their Psychological Resonance",
+      category: "STYLE STUDIES",
+      date: "June 19, 2026",
+      readTime: "7 MIN READ",
+      excerpt: "How balancing concrete grayscale accents, ivory fabrics, and raw textures affects space perceptions, mood alignment, and executive styling.",
       image: "https://images.unsplash.com/photo-1509551388413-e18d0ac5d495?q=80&w=700&auto=format&fit=crop",
-      size: { xs: 12, md: 6 },
     },
   ];
 
-  const filteredProducts = activeFilter === "ALL" 
-    ? saleProducts 
-    : saleProducts.filter(p => p.category === activeFilter);
+  const filteredBlogs = activeFilter === "ALL" 
+    ? blogPosts 
+    : blogPosts.filter(p => p.category === activeFilter);
 
   return (
     <Box sx={{ bgcolor: "#f8f6f3", minHeight: "100vh", py: { xs: 6, md: 8 } }}>
       <Container maxWidth="xl">
         
         {/* ==========================================
-            CLEAN LUXURY EDITORIAL CENTERED HEADER
+            LUXURY EDITORIAL CENTERED HEADER
            ========================================== */}
         <Box sx={{ textAlign: "center", mb: 8, px: 2 }}>
           <Stack 
@@ -89,13 +82,13 @@ const SalePage = () => {
                 fontWeight: 700, 
                 textTransform: "uppercase", 
                 letterSpacing: "4px", 
-                color: "#b33939",
+                color: "#A57C5A",
                 fontSize: "11px" 
               }}
             >
-              ARCHIVE DISCOUNTS
+              STUDIO JOURNAL
             </Typography>
-            <Box sx={{ width: "4px", height: "4px", bgcolor: "#b33939", borderRadius: "50%" }} />
+            <Box sx={{ width: "4px", height: "4px", bgcolor: "#A57C5A", borderRadius: "50%" }} />
             <Typography
               sx={{ 
                 fontFamily: '"Montserrat", sans-serif', 
@@ -105,7 +98,7 @@ const SalePage = () => {
                 letterSpacing: "1px"
               }}
             >
-              LIMITED RUN
+              VOLUME IV
             </Typography>
           </Stack>
 
@@ -120,7 +113,7 @@ const SalePage = () => {
               mb: 4
             }}
           >
-            The Sale Edit
+            Studio Stories
           </Typography>
 
           {/* MINIMALIST CENTERED FILTER TRACK */}
@@ -131,9 +124,10 @@ const SalePage = () => {
             sx={{ 
               overflowX: "auto", 
               pb: 1,
-              borderBottom: "1px solid #eaeaea",
-              maxWidth: "600px",
-              mx: "auto"
+              borderBottom: "1px solid rgba(26,26,26,0.06)",
+              maxWidth: "700px",
+              mx: "auto",
+              '&::-webkit-scrollbar': { display: 'none' }
             }}
           >
             {filters.map((filter) => (
@@ -144,7 +138,7 @@ const SalePage = () => {
                   fontFamily: '"Montserrat", sans-serif',
                   fontSize: "12px",
                   fontWeight: activeFilter === filter ? 700 : 500,
-                  color: activeFilter === filter ? "#111111" : "#777777",
+                  color: activeFilter === filter ? "#111111" : "rgba(26,26,26,0.4)",
                   textTransform: "uppercase",
                   letterSpacing: "2px",
                   p: 0,
@@ -171,11 +165,12 @@ const SalePage = () => {
         </Box>
 
         {/* ==========================================
-            ELEGANT TWO-COLUMN SYMMETRIC LOOKBOOK
+            DNYANSU SYMMETRIC GRID LOOKBOOK
            ========================================== */}
         <Grid container spacing={4}>
-          {filteredProducts.map((product) => (
-            <Grid key={product.id} size={{ xs: product.size.xs, md: product.size.md }}>
+          {filteredBlogs.map((blog) => (
+            // 🔥 FIXED BREAKPOINT MATRIX: Standard grid mapping using dynamic size block parameters
+            <Grid key={blog.id} item size={{ xs: 12, sm: 6, md: 4 }}>
               <Card
                 sx={{
                   borderRadius: 0,
@@ -183,20 +178,25 @@ const SalePage = () => {
                   boxShadow: "none",
                   cursor: "pointer",
                   position: "relative",
-                  "&:hover .sale-img-transform": { transform: "scale(1.03)" },
-                  "&:hover .action-overlay-btn": { opacity: 1, transform: "translate(-50%, -50%) scale(1)" }
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  "&:hover .blog-img-transform": { transform: "scale(1.04)" },
+                  "&:hover .action-overlay-btn": { opacity: 1, transform: "translate(-50%, -50%) scale(1)" },
+                  "&:hover .read-more-text": { color: "#A57C5A" }
                 }}
               >
-                {/* IMAGE TRACK VIEWPORT */}
+                {/* IMAGE TRACK VIEWPORT CONTAINER */}
                 <Box
                   sx={{
                     position: "relative",
                     overflow: "hidden",
                     bgcolor: "#f2f0eb",
-                    height: { xs: "360px", sm: "450px", md: "500px" },
+                    height: "300px", // 👈 Equal fixed row height parameter locked across all screens
                   }}
                 >
-                  {/* Subtle Corner Percentage Tag */}
+                  {/* Category badging overlay */}
                   <Typography
                     sx={{
                       position: "absolute",
@@ -204,128 +204,103 @@ const SalePage = () => {
                       left: 20,
                       zIndex: 2,
                       fontFamily: '"Montserrat", sans-serif',
-                      fontSize: "11px",
+                      fontSize: "9px",
                       fontWeight: 700,
                       color: "#ffffff",
-                      bgcolor: "#b33939",
+                      bgcolor: "#111111",
                       px: 1.5,
                       py: 0.6,
-                      letterSpacing: "1px"
+                      letterSpacing: "1.5px",
+                      textTransform: "uppercase"
                     }}
                   >
-                    {product.discount}
+                    {blog.category}
                   </Typography>
 
-                  {/* Corner Wishlist */}
-                  <IconButton
-                    sx={{
-                      position: "absolute",
-                      top: 14,
-                      right: 14,
-                      zIndex: 2,
-                      color: "#111111",
-                      bgcolor: "rgba(255,255,255,0.8)",
-                      "&:hover": { bgcolor: "#ffffff" }
-                    }}
-                  >
-                    <FavoriteBorderIcon sx={{ fontSize: "18px" }} />
-                  </IconButton>
-
-                  {/* Core Content Media */}
+                  {/* Core Content Media Render */}
                   <CardMedia
                     component="img"
-                    className="sale-img-transform"
-                    image={product.image}
-                    alt={product.name}
-                    onClick={() => navigate(`/product/${product.id}`)}
+                    className="blog-img-transform"
+                    image={blog.image}
+                    alt={blog.title}
                     sx={{
                       width: "100%",
                       height: "100%",
                       objectFit: "cover",
-                      transition: "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)"
+                      transition: "transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)"
                     }}
                   />
-
-                  {/* Centered Minimalist Quick Add Triggers */}
-                  <IconButton
-                    className="action-overlay-btn"
-                    sx={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%) scale(0.9)",
-                      opacity: 0,
-                      zIndex: 3,
-                      bgcolor: "#111111",
-                      color: "#ffffff",
-                      width: "54px",
-                      height: "54px",
-                      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                      "&:hover": { bgcolor: "#b33939" }
-                    }}
-                  >
-                    <AddIcon />
-                  </IconButton>
                 </Box>
 
-                {/* PRODUCT METRICS FOOTER CONTAINER */}
-                <Box sx={{ pt: 2.5, pb: 2, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Box sx={{ maxWidth: "70%" }}>
+                {/* BLOG METRICS FOOTER CONTAINER */}
+                <CardContent sx={{ px: 0, pt: 3, pb: 0, textAlign: "left", flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <Box>
+                    {/* Timestamp specs row tracking */}
+                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                      <Typography sx={{ fontFamily: '"Montserrat", sans-serif', color: "#888888", fontSize: "11px", fontWeight: 500, letterSpacing: "0.5px" }}>
+                        {blog.date}
+                      </Typography>
+                      <Box sx={{ width: "3px", height: "3px", bgcolor: "rgba(26,26,26,0.2)", borderRadius: "50%" }} />
+                      <Typography sx={{ fontFamily: '"Montserrat", sans-serif', color: "#A57C5A", fontSize: "11px", fontWeight: 600, letterSpacing: "0.5px" }}>
+                        {blog.readTime}
+                      </Typography>
+                    </Stack>
+
                     <Typography
-                      variant="body1"
-                      onClick={() => navigate(`/product/${product.id}`)}
+                      variant="h5"
                       sx={{
-                        fontFamily: '"Montserrat", sans-serif',
-                        fontWeight: 600,
-                        fontSize: "15px",
+                        fontFamily: '"Playfair Display", serif',
+                        fontWeight: 700,
+                        fontSize: "22px",
                         color: "#111111",
                         lineHeight: 1.3,
-                        "&:hover": { color: "#cda587" }
+                        mb: 2,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden"
                       }}
                     >
-                      {product.name}
+                      {blog.title}
                     </Typography>
+
                     <Typography
-                      variant="caption"
-                      sx={{ 
-                        fontFamily: '"Montserrat", sans-serif', 
-                        color: "#888888", 
-                        letterSpacing: "1px", 
-                        textTransform: "uppercase", 
-                        mt: 0.5, 
-                        display: "block",
-                        fontWeight: 500
+                      variant="body2"
+                      sx={{
+                        fontFamily: '"Montserrat", sans-serif',
+                        color: "rgba(26,26,26,0.6)",
+                        fontSize: "13.5px",
+                        lineHeight: 1.6,
+                        fontWeight: 400,
+                        mb: 3,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden"
                       }}
                     >
-                      {product.category} // PRIVATE SALE
+                      {blog.excerpt}
                     </Typography>
                   </Box>
 
-                  {/* Fine Typography Pricing Layout */}
-                  <Stack alignItems="flex-end" spacing={0.2}>
-                    <Typography
-                      sx={{ 
-                        fontFamily: '"Montserrat", sans-serif', 
-                        fontWeight: 500, 
-                        fontSize: "13px", 
-                        color: "#999999", 
-                        textDecoration: "line-through" 
-                      }}
-                    >
-                      {product.originalPrice}
+                  {/* Interactive luxury text button connector */}
+                  <Stack 
+                    direction="row" 
+                    alignItems="center" 
+                    spacing={1} 
+                    className="read-more-text"
+                    sx={{ 
+                      color: "#111111", 
+                      transition: "color 0.3s ease",
+                      mt: "auto"
+                    }}
+                  >
+                    <Typography sx={{ fontFamily: '"Montserrat", sans-serif', fontWeight: 700, fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase" }}>
+                      READ STORY
                     </Typography>
-                    <Typography
-                      sx={{ 
-                        fontFamily: '"Montserrat", sans-serif', 
-                        fontWeight: 700, 
-                        fontSize: "16px", 
-                        color: "#b33939"
-                      }}
-                    >
-                      {product.salePrice}
-                    </Typography>
+                    <ArrowForwardIosIcon sx={{ fontSize: "9px", mt: '-1px' }} />
                   </Stack>
-                </Box>
+                </CardContent>
 
               </Card>
             </Grid>
@@ -337,4 +312,4 @@ const SalePage = () => {
   );
 };
 
-export default SalePage;
+export default BlogPage;
